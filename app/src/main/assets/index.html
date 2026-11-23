@@ -297,7 +297,8 @@ function renderVoice(){
 /* 録音した声を加工して鳴らす */
 function audioCtx(){ AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); return AC; }
 const decoded = new Map();
-const LINES = {atk: ['えいっ！', 'はっ！', 'とりゃー！', 'それっ！'], sp: ['くらえ！', 'ひっさつ！', 'うおおおー！'], ko: ['やられたー！', 'くそー！', 'まけました…']};
+const LINES = {atk: ['えいっ！', 'はっ！', 'とりゃー！', 'それっ！'], sp: ['くらえ！', 'ひっさつ！', 'うおおおー！'], ko: ['やられたー！', 'くそー！', 'まけました…'],
+  win: ['ありがとうございました！', '私の勝ちですね！', '楽しい試合でした！', 'たいせんありがとうございました！']};
 const VTYPES = [['none', '🔇 なし'], ['m', '👨 男性'], ['f', '👩 女性'], ['rec', '🎙️ 録音']];
 const vtypeOf = c => c.vtype || (getVoice(c.id, 'atk') ? 'rec' : 'none');
 // 録音した声の高さ（Hz）を自己相関でざっくり測る
@@ -323,7 +324,7 @@ function sayLine(src, kind){
   // src：録音（AudioBuffer）か、テンプレの声 'm' / 'f'
   const t = pick(LINES[kind]);
   const pitch = src === 'm' ? .72 : src === 'f' ? 1.55 : clamp(voicePitch(src) / 190, .55, 2);
-  const rate = kind === 'ko' ? .95 : 1.2;
+  const rate = kind === 'ko' ? .95 : kind === 'win' ? 1.05 : 1.2;
   try {
     if (window.Android && Android.speak){ Android.speak(t, pitch, rate); return true; }
     if (window.speechSynthesis){ const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.pitch = Math.min(2, pitch); u.rate = rate; speechSynthesis.cancel(); speechSynthesis.speak(u); return true; }
@@ -787,7 +788,7 @@ function result(){
   $('rsTour').style.display = inTour ? '' : 'none';
   $('rsAgain').style.display = inTour ? 'none' : '';
   $('rsSlots').style.display = inTour ? 'none' : '';
-  show('s-res'); setTimeout(() => { if (!voice(w, 'sp')) speak(`${w.name}の勝ち！`, 1, 1); }, 200);
+  show('s-res'); setTimeout(() => { lineUntil = 0; voiceLog = []; if (!voice(w, 'win')) speak(`${w.name}の勝ち！`, 1, 1); }, 200);
 }
 $('rsAgain').onclick = () => startFight(lastList);
 $('rsTour').onclick = drawTour;
