@@ -34,6 +34,6 @@ jobs:
       - uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: オートスターブラザーズ 最新版
+          name: スマートバトルブラザーズ 最新版
           files: sumabros.apk
           make_latest: true

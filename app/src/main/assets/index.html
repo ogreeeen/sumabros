@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#1b1d4a">
-<title>オートスターブラザーズ</title>
+<title>スマートバトルブラザーズ</title>
 <style>
 :root{--bg:#1b1d4a;--ink:#fff;--mut:#b9bce8;--card:#272a66;--line:#3b3f8f;--acc:#ffcc33}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -101,15 +101,13 @@ input.name{width:min(560px,100%);font-weight:900;font-size:22px;font-family:inhe
 
 <!-- タイトル -->
 <section class="scr on" id="s-title">
-  <h1>オートスター<br>ブラザーズ</h1>
+  <h1>スマートバトル<br>ブラザーズ</h1>
   <p class="mut">キャラをつくったら、あとは見てるだけ！<br>1試合は4人まで。5人以上はトーナメントで勝ちぬき！<br>ダメージ％がたまるほど遠くまでふっとぶよ。<br>場外に出たらストックが減って、最後まで残った人の勝ち。</p>
   <div class="sec" style="text-align:center">なんにんで戦う？</div>
   <div class="row stp"><button id="nMinus">−</button><div id="nVal">4人</div><button id="nPlus">＋</button></div>
   <p class="mut" id="nMode" style="margin:4px 0 0"></p>
   <div class="sec" style="text-align:center">ストック</div>
   <div class="row seg" id="stk"><button data-n="1">1</button><button data-n="2">2</button><button data-n="3" class="on">3</button></div>
-  <div class="sec" style="text-align:center">実況（読み上げ）</div>
-  <div class="row seg" id="ttsOn"><button data-n="1" class="on">あり</button><button data-n="0">なし</button></div>
   <button class="btn" id="toSlots" style="margin-top:22px">キャラをえらぶ</button>
   <button class="btn s" id="reset" style="min-width:160px;font-size:15px;padding:9px 16px">🗑 リセット</button>
   <p class="mut" style="font-size:12px;margin-top:2px">作ったキャラ・録音した声・設定は、次に開いたときも残ります。</p>
@@ -236,8 +234,7 @@ seg('stk', n => nStock = n);
 let voOn = 1, ttsOn = 1;
 try { voOn = +(localStorage.getItem('smb_vo') ?? 1); ttsOn = +(localStorage.getItem('smb_tts') ?? 1); } catch(e){}
 voOn = 1;   // 声のあり・なしはキャラごとに選ぶ
-$('ttsOn').querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.n === ttsOn));
-seg('ttsOn', n => { ttsOn = n; try { localStorage.setItem('smb_tts', n); } catch(e){} });
+ttsOn = 1;   // 実況は常にオン
 function setN(n){ nFighters = clamp(n, 2, 16); mode = nFighters >= 5 ? 1 : 0; $('nVal').textContent = nFighters + '人'; $('nMode').textContent = mode ? `トーナメント（${groupSizes(nFighters).join('人・')}人の1回戦から）` : '全員でいっしょに戦う'; }
 $('nMinus').onclick = () => setN(nFighters - 1); $('nPlus').onclick = () => setN(nFighters + 1); setN(nFighters);
 function speak(t, pitch = 1, rate = 1.1){
@@ -268,7 +265,6 @@ $('reset').onclick = () => {
   try { Object.keys(localStorage).filter(k => k.startsWith('smb_')).forEach(k => localStorage.removeItem(k)); } catch(e){}
   roster = []; nStock = 3; ttsOn = 1; tour = null; setN(4);
   $('stk').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.n === '3'));
-  $('ttsOn').querySelectorAll('button').forEach(x => x.classList.toggle('on', x.dataset.n === '1'));
   resetArm = 0; b.textContent = '✅ リセットしました'; b.style.background = '';
   setTimeout(() => b.textContent = '🗑 リセット', 1500);
 };
