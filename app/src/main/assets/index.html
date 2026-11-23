@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="theme-color" content="#1b1d4a">
-<title>オートバトルブラザーズ</title>
+<title>オートスターブラザーズ</title>
 <style>
 :root{--bg:#1b1d4a;--ink:#fff;--mut:#b9bce8;--card:#272a66;--line:#3b3f8f;--acc:#ffcc33}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -49,12 +49,40 @@ input.name{width:min(560px,100%);font-weight:900;font-size:22px;font-family:inhe
 /* 対戦 */
 #s-fight{padding:0}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block}
-#hud{position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;justify-content:center;padding:8px 6px calc(10px + env(safe-area-inset-bottom));pointer-events:none}
+#hud{position:absolute;left:0;right:0;bottom:0;display:flex;flex-wrap:wrap;gap:4px 6px;justify-content:center;padding:8px 6px calc(10px + env(safe-area-inset-bottom));pointer-events:none}
 .hc{flex:1;max-width:130px;background:#0009;border-radius:12px;padding:5px 6px;text-align:center;border-bottom:4px solid}
 .hc .p{font-weight:900;font-size:clamp(20px,6vw,30px);font-family:inherit;line-height:1.1}
 .hc .n{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hc .sk{font-size:11px;letter-spacing:1px}
 .hc.out{opacity:.35}
+#hud.m .hc{flex:0 0 calc(25% - 6px);padding:2px 4px;border-bottom-width:3px}
+#hud.m .hc .p{font-size:17px}
+#hud.m .hc .n{font-size:10px}
+#hud.l .hc{flex:0 0 calc(12.5% - 6px);padding:1px 2px;border-bottom-width:3px}
+#hud.l .hc .p{font-size:12px}
+#hud.l .hc .nm{display:none}
+#hud.l .hc .sk{font-size:7px;letter-spacing:0}
+.stp{align-items:center}
+.stp button{width:54px;height:54px;border-radius:50%;border:0;background:var(--card);color:#fff;font-size:30px;font-weight:900;font-family:inherit}
+.stp div{min-width:110px;text-align:center;font-weight:900;font-size:32px}
+.vo{border:2px solid var(--line);background:var(--card);border-radius:12px;padding:6px;text-align:center}
+.vo .rec{width:100%;border:0;border-radius:10px;background:#e53935;color:#fff;font-weight:900;font-family:inherit;font-size:14px;padding:9px 4px}
+.vo .rec.on{animation:blink .6s infinite}
+@keyframes blink{50%{opacity:.45}}
+.vo .sm{display:flex;gap:4px;margin-top:5px}
+.vo .sm button{flex:1;border:0;border-radius:8px;background:#3b3f8f;color:#fff;font-size:15px;padding:5px 0}
+.vo .sm button:disabled{opacity:.3}
+.vo .lb{font-size:11px;color:var(--mut);margin-top:3px}
+/* トーナメント表 */
+.rd{width:min(520px,100%);margin:6px 0}
+.rd h3{margin:10px 0 4px;font-size:15px;color:var(--acc)}
+.mt{display:flex;align-items:center;gap:6px;background:var(--card);border-radius:12px;padding:6px 8px;margin:4px 0;font-weight:900;font-size:14px}
+.mt.nx{box-shadow:0 0 0 3px var(--acc) inset}
+.mt .pl{flex:1;display:flex;align-items:center;gap:5px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mt .pl.ls{opacity:.35;text-decoration:line-through}
+.mt .pl.wn{color:var(--acc)}
+.mt .vs{color:var(--mut);font-size:12px}
+.mt .dot{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:16px;flex:none}
 #top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:calc(8px + env(safe-area-inset-top)) 10px 0}
 #top button{border:0;border-radius:10px;background:#0008;color:#fff;font-weight:900;font-family:inherit;font-size:16px;padding:8px 12px}
 #clock{font-weight:900;font-size:20px;background:#0008;border-radius:10px;padding:4px 12px}
@@ -72,19 +100,24 @@ input.name{width:min(560px,100%);font-weight:900;font-size:22px;font-family:inhe
 
 <!-- タイトル -->
 <section class="scr on" id="s-title">
-  <h1>オートバトル<br>ブラザーズ</h1>
-  <p class="mut">キャラをつくったら、あとは見てるだけ！<br>ダメージ％がたまるほど遠くまでふっとぶよ。<br>場外に出たらストックが減って、最後まで残った人の勝ち。</p>
+  <h1>オートスター<br>ブラザーズ</h1>
+  <p class="mut">キャラをつくったら、あとは見てるだけ！<br>1試合は4人まで。5人以上はトーナメントで勝ちぬき！<br>ダメージ％がたまるほど遠くまでふっとぶよ。<br>場外に出たらストックが減って、最後まで残った人の勝ち。</p>
   <div class="sec" style="text-align:center">なんにんで戦う？</div>
-  <div class="row seg" id="num"><button data-n="2">2人</button><button data-n="3">3人</button><button data-n="4" class="on">4人</button></div>
+  <div class="row stp"><button id="nMinus">−</button><div id="nVal">4人</div><button id="nPlus">＋</button></div>
+  <p class="mut" id="nMode" style="margin:4px 0 0"></p>
   <div class="sec" style="text-align:center">ストック</div>
   <div class="row seg" id="stk"><button data-n="1">1</button><button data-n="2">2</button><button data-n="3" class="on">3</button></div>
+  <div class="sec" style="text-align:center">録音した声</div>
+  <div class="row seg" id="voOn"><button data-n="1" class="on">あり</button><button data-n="0">なし</button></div>
+  <div class="sec" style="text-align:center">実況（読み上げ）</div>
+  <div class="row seg" id="ttsOn"><button data-n="1" class="on">あり</button><button data-n="0">なし</button></div>
   <button class="btn" id="toSlots" style="margin-top:22px">キャラをえらぶ</button>
 </section>
 
 <!-- 参加キャラ -->
 <section class="scr" id="s-slots">
   <h2>ファイター</h2>
-  <p class="mut">「つくる」で自分だけのキャラを設計。<br>「CPU」はおまかせで作ります。</p>
+  <p class="mut">「つくる」で自分だけのキャラを設計（声も録音できます）。<br>「CPU」はおまかせで作ります。</p>
   <div id="slots" style="width:min(520px,100%)"></div>
   <button class="btn" id="fight" style="margin-top:14px">バトルスタート！</button>
   <button class="btn s" id="slBack">もどる</button>
@@ -99,6 +132,7 @@ input.name{width:min(560px,100%);font-weight:900;font-size:22px;font-family:inhe
   <div class="sec">タイプ</div><div class="grid g3" id="mkType"></div>
   <div class="sec">ふつうのわざ</div><div class="grid g3" id="mkAtk"></div>
   <div class="sec">ひっさつわざ（ときどき使う）</div><div class="grid g3" id="mkSp"></div>
+  <div class="sec">こえ（その場で録音・1つ3秒まで）</div><div class="grid g3" id="mkVoice"></div>
   <div class="stats"><div class="prev"><div class="av" id="mkAv"></div><div id="mkDesc" style="font-size:13px;line-height:1.5"></div></div><div id="mkStats"></div></div>
   <div class="row" style="margin-top:10px"><button class="btn s" id="mkRand" style="min-width:140px">🎲 おまかせ</button><button class="btn" id="mkOk" style="min-width:140px">けってい</button></div>
 </section>
@@ -111,11 +145,21 @@ input.name{width:min(560px,100%);font-weight:900;font-size:22px;font-family:inhe
   <div id="hud"></div>
 </section>
 
+<!-- トーナメント表 -->
+<section class="scr" id="s-tour">
+  <h2 id="trTitle">トーナメント</h2>
+  <div id="trChamp"></div>
+  <div id="trList" style="width:min(520px,100%)"></div>
+  <button class="btn" id="trGo" style="margin-top:12px"></button>
+  <button class="btn s" id="trQuit">やめる</button>
+</section>
+
 <!-- 結果 -->
 <section class="scr" id="s-res">
   <div class="win" id="rsAv"></div>
   <h1 id="rsName" style="margin-top:6px;font-size:clamp(26px,7vw,40px)"></h1>
   <div class="res" id="rsList"></div>
+  <button class="btn" id="rsTour" style="display:none">トーナメント表へ</button>
   <button class="btn" id="rsAgain">同じキャラでもういちど</button>
   <button class="btn s" id="rsSlots">キャラをかえる</button>
   <button class="btn s" id="rsTitle">タイトルへ</button>
@@ -128,7 +172,7 @@ const R = Math.random, pick = a => a[Math.floor(R() * a.length)];
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 
 /* ---------- 選べるもの ---------- */
-const FACES = ['🐱','🐶','🐸','🐵','🐼','🦊','🐯','🐧','🤖','👻','🦖','🐙'];
+const FACES = ['🐱','🐶','🐸','🐵','🐼','🦊','🐯','🐧','🤖','👻','🦖','🐙','🐰','🐻','🦁','🐔'];
 const COLORS = ['#e53935','#1e88e5','#43a047','#fdd835','#8e24aa','#fb8c00','#00acc1','#ec407a','#6d4c41','#546e7a','#7cb342','#f5f5f5'];
 const TYPES = {
   power:  {n:'パワー',   e:'💪', d:'わざが強い。ちょっと重い', atk:1.25, spd:.92, wt:1.12, jmp:.95, jumps:2},
@@ -153,24 +197,49 @@ const SPS = {
   heal:   {n:'かいふく', e:'💚', d:'ダメージを30％へらす',  cd:9},
   shield: {n:'バリア',   e:'🛡️', d:'しばらく無敵＆はね返す', cd:9},
 };
-const CPU_NAMES = ['ミケ','ポチ','ケロ','モンタ','パン太','コン','トラ吉','ペン吉','ロボ太','ユーレイ','ガブ','タコ助'];
+const CPU_NAMES = ['ミケ','ポチ','ケロ','モンタ','パン太','コン','トラ吉','ペン吉','ロボ太','ユーレイ','ガブ','タコ助','ウサ','クマ吉','ライ王','コケ'];
 
 /* ---------- 設定 ---------- */
-let nFighters = 4, nStock = 3;
-let roster = [];    // {human, name, face, color, type, atk, sp}
-try { const s = JSON.parse(localStorage.getItem('smb_roster') || 'null'); if (Array.isArray(s)) roster = s; } catch(e){}
-function save(){ try { localStorage.setItem('smb_roster', JSON.stringify(roster)); } catch(e){} }
+let nFighters = 4, nStock = 3, mode = 0;   // mode 0:全員で同時 1:トーナメント
+let roster = [];    // {id, human, name, face, color, type, atk, sp}
+const newId = () => 'c' + Date.now().toString(36) + Math.floor(R() * 1e6).toString(36);
+try { const s = JSON.parse(localStorage.getItem('smb_roster') || 'null'); if (Array.isArray(s)) roster = s.filter(Boolean); } catch(e){}
+roster.forEach(c => { if (!c.id) c.id = newId(); });
+try { nFighters = clamp(+localStorage.getItem('smb_n') || 4, 2, 16); } catch(e){}
+function save(){
+  try {
+    localStorage.setItem('smb_roster', JSON.stringify(roster)); localStorage.setItem('smb_n', nFighters);
+    // 使われなくなったキャラの声を消す
+    const ids = new Set(roster.map(c => c.id));
+    Object.keys(localStorage).filter(k => k.startsWith('smb_v_') && !ids.has(k.split('_')[2])).forEach(k => localStorage.removeItem(k));
+  } catch(e){}
+}
+/* 声：攻撃・必殺・やられた */
+const VOICES = [['atk', '🗣️ こうげき'], ['sp', '🔥 ひっさつ'], ['ko', '😵 やられた']];
+const vkey = (id, k) => `smb_v_${id}_${k}`;
+const getVoice = (id, k) => { try { return localStorage.getItem(vkey(id, k)); } catch(e){ return null; } };
+const voiceCount = c => VOICES.filter(([k]) => getVoice(c.id, k)).length;
 function randChar(human){
   const usedC = roster.map(r => r && r.color), usedF = roster.map(r => r && r.face);
   const face = pick(FACES.filter(f => !usedF.includes(f)).concat(FACES.length ? [] : FACES)) || pick(FACES);
-  return {human: !!human, name: human ? 'わたし' : (CPU_NAMES[FACES.indexOf(face)] || 'CPU'), face,
+  let name = human ? 'わたし' : (CPU_NAMES[FACES.indexOf(face)] || 'CPU');
+  if (!human && roster.some(r => r && r.name === name)) name += (roster.filter(r => r && r.name.startsWith(name)).length + 1);
+  return {id: newId(), human: !!human, name, face,
     color: pick(COLORS.filter(c => !usedC.includes(c))) || pick(COLORS),
     type: pick(Object.keys(TYPES)), atk: pick(Object.keys(ATKS)), sp: pick(Object.keys(SPS))};
 }
 function show(id){ document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === id)); }
 function seg(id, cb){ $(id).querySelectorAll('button').forEach(b => b.onclick = () => { $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); cb(+b.dataset.n); }); }
-seg('num', n => nFighters = n); seg('stk', n => nStock = n);
+seg('stk', n => nStock = n);
+let voOn = 1, ttsOn = 1;
+try { voOn = +(localStorage.getItem('smb_vo') ?? 1); ttsOn = +(localStorage.getItem('smb_tts') ?? 1); } catch(e){}
+['voOn', 'ttsOn'].forEach(id => $(id).querySelectorAll('button').forEach(b => b.classList.toggle('on', +b.dataset.n === (id === 'voOn' ? voOn : ttsOn))));
+seg('voOn', n => { voOn = n; try { localStorage.setItem('smb_vo', n); } catch(e){} });
+seg('ttsOn', n => { ttsOn = n; try { localStorage.setItem('smb_tts', n); } catch(e){} });
+function setN(n){ nFighters = clamp(n, 2, 16); mode = nFighters >= 5 ? 1 : 0; $('nVal').textContent = nFighters + '人'; $('nMode').textContent = mode ? `トーナメント（${groupSizes(nFighters).join('人・')}人の1回戦から）` : '全員でいっしょに戦う'; }
+$('nMinus').onclick = () => setN(nFighters - 1); $('nPlus').onclick = () => setN(nFighters + 1); setN(nFighters);
 function speak(t, pitch = 1, rate = 1.1){
+  if (typeof ttsOn !== 'undefined' && !ttsOn) return;
   try {
     if (window.Android && Android.speak) Android.speak(t, pitch, rate);
     else if (window.speechSynthesis){ const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.pitch = pitch; u.rate = rate; speechSynthesis.cancel(); speechSynthesis.speak(u); }
@@ -183,7 +252,7 @@ function drawSlots(){
   $('slots').innerHTML = roster.slice(0, nFighters).map((c, i) => `<div class="slot">
     <div class="av" style="background:${c.color}">${c.face}</div>
     <div><div class="nm">${esc(c.name)}${c.human ? '' : '<span class="cpu">CPU</span>'}</div>
-      <div class="sub">${TYPES[c.type].e}${TYPES[c.type].n}・${ATKS[c.atk].e}${ATKS[c.atk].n}・${SPS[c.sp].e}${SPS[c.sp].n}</div></div>
+      <div class="sub">${TYPES[c.type].e}${TYPES[c.type].n}・${ATKS[c.atk].e}${ATKS[c.atk].n}・${SPS[c.sp].e}${SPS[c.sp].n}${voiceCount(c) ? `・🎙️${voiceCount(c)}` : ''}</div></div>
     <div class="act"><button class="k" data-m="${i}">つくる</button><button data-r="${i}">CPU</button></div></div>`).join('');
   $('slots').querySelectorAll('[data-m]').forEach(b => b.onclick = () => make(+b.dataset.m));
   $('slots').querySelectorAll('[data-r]').forEach(b => b.onclick = () => { const i = +b.dataset.r; roster[i] = null; roster[i] = randChar(false); save(); drawSlots(); });
@@ -208,7 +277,49 @@ function renderMake(){
   const T = TYPES[mk.type], A = ATKS[mk.atk];
   $('mkDesc').innerHTML = `<b>${esc($('mkName').value || 'ななし')}</b><br>${T.e}${T.n}タイプ／${A.e}${A.n}／${SPS[mk.sp].e}${SPS[mk.sp].n}`;
   const st = [['こうげき', T.atk * (A.dmg + A.kb * 1.5) / 18], ['ふっとばし', T.atk * A.g / .13], ['はやさ', T.spd / 1.4], ['おもさ', T.wt / 1.5], ['ジャンプ', T.jmp * T.jumps / 3.8], ['リーチ', Math.min(1, A.range / 640 * .6 + .25)]];
+  renderVoice();
   $('mkStats').innerHTML = st.map(([n, v]) => `<div class="st"><span>${n}</span><i><b style="width:${Math.round(clamp(v, .08, 1) * 100)}%"></b></i></div>`).join('');
+}
+let rec = null;
+function renderVoice(){
+  $('mkVoice').innerHTML = VOICES.map(([k, lb]) => {
+    const has = !!getVoice(mk.id, k), on = rec && rec.kind === k;
+    return `<div class="vo"><button class="rec${on ? ' on' : ''}" data-r="${k}">${on ? '⏺ 録音中…（タップで止める）' : '🎙️ ' + (has ? '録りなおす' : '録音する')}</button>
+      <div class="sm"><button data-p="${k}"${has ? '' : ' disabled'}>▶</button><button data-d="${k}"${has ? '' : ' disabled'}>🗑</button></div>
+      <div class="lb">${lb}</div></div>`;
+  }).join('');
+  $('mkVoice').querySelectorAll('[data-r]').forEach(b => b.onclick = () => recVoice(b.dataset.r));
+  $('mkVoice').querySelectorAll('[data-p]').forEach(b => b.onclick = () => playData(getVoice(mk.id, b.dataset.p)));
+  $('mkVoice').querySelectorAll('[data-d]').forEach(b => b.onclick = () => { try { localStorage.removeItem(vkey(mk.id, b.dataset.d)); } catch(e){} renderVoice(); });
+}
+function playData(u){ if (!u) return; try { const a = new Audio(u); a.play().catch(() => {}); } catch(e){} }
+async function recVoice(kind){
+  if (rec){ const same = rec.kind === kind; rec.stop(); if (same) return; await new Promise(r => setTimeout(r, 300)); }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){ alert('この端末・ブラウザでは録音できません'); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({audio: true}); }
+  catch(e){ alert('マイクが使えませんでした。マイクの使用を許可してください。'); return; }
+  const o = {audioBitsPerSecond: 32000};
+  try { if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) o.mimeType = 'audio/webm;codecs=opus'; else if (MediaRecorder.isTypeSupported('audio/mp4')) o.mimeType = 'audio/mp4'; } catch(e){}
+  let mr; try { mr = new MediaRecorder(stream, o); } catch(e){ mr = new MediaRecorder(stream); }
+  const chunks = [], id = mk.id;
+  const me = {kind, stop: () => { if (mr.state !== 'inactive') mr.stop(); }};
+  rec = me;
+  mr.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+  mr.onstop = () => {
+    stream.getTracks().forEach(t => t.stop()); clearTimeout(me.t);
+    const fr = new FileReader();
+    fr.onload = () => {
+      try { localStorage.setItem(vkey(id, kind), fr.result); }
+      catch(e){ alert('保存できる容量がいっぱいです。使わないキャラの声を消してください。'); }
+      if (rec === me) rec = null;
+      if (mk && mk.id === id) renderVoice();
+      playData(fr.result);
+    };
+    fr.readAsDataURL(new Blob(chunks, {type: mr.mimeType || 'audio/webm'}));
+  };
+  mr.start(); me.t = setTimeout(() => me.stop(), 3000);
+  renderVoice();
 }
 function make(i){
   mkIdx = i; mk = Object.assign({}, roster[i]);
@@ -218,33 +329,50 @@ function make(i){
 }
 $('mkName').oninput = renderMake;
 $('mkRand').onclick = () => { const r = randChar(true); Object.assign(mk, {face: r.face, color: r.color, type: r.type, atk: r.atk, sp: r.sp}); renderMake(); };
-$('mkOk').onclick = () => { mk.name = ($('mkName').value || '').trim() || 'ななし'; mk.human = true; roster[mkIdx] = mk; save(); drawSlots(); show('s-slots'); };
+$('mkOk').onclick = () => { if (rec) rec.stop(); mk.name = ($('mkName').value || '').trim() || 'ななし'; mk.human = true; roster[mkIdx] = mk; save(); drawSlots(); show('s-slots'); };
 
 /* ---------- バトル ---------- */
 const cv = $('cv'), ctx = cv.getContext('2d');
-const GRAV = 2300, STAGE = {x0: 200, x1: 800, y: 600}, PLAT = [{x0: 270, x1: 430, y: 455}, {x0: 570, x1: 730, y: 455}, {x0: 420, x1: 580, y: 320}];
-const BLAST = {l: -380, r: 1380, t: -560, b: 1150};
+const GRAV = 2300;
+let STAGE = {x0: 200, x1: 800, y: 600}, PLAT = [], BLAST = {};
+function setupStage(n){
+  const w = n <= 4 ? 600 : Math.min(1400, 600 + (n - 4) * 66);
+  STAGE = {x0: 500 - w / 2, x1: 500 + w / 2, y: 600};
+  if (n <= 4) PLAT = [{x0: 270, x1: 430, y: 455}, {x0: 570, x1: 730, y: 455}, {x0: 420, x1: 580, y: 320}];
+  else {
+    PLAT = []; const k = Math.round(w / 260);
+    for (let i = 0; i < k; i++){ const c = STAGE.x0 + w * (i + .5) / k; PLAT.push({x0: c - 75, x1: c + 75, y: 455}); }
+    for (let i = 0; i < k - 1; i++){ const c = STAGE.x0 + w * (i + 1) / k; PLAT.push({x0: c - 70, x1: c + 70, y: 320}); }
+  }
+  BLAST = {l: STAGE.x0 - 580, r: STAGE.x1 + 580, t: -560, b: 1150};
+}
+setupStage(4);
 let F = [], projs = [], sparks = [], cam = {x: 500, y: 450, z: 1}, shake = 0, speedMul = 1, clock = 180, running = false, lastT = 0, endT = 0, slowmo = 0, acc = 0;
 
-function makeFighter(c, i){
+function makeFighter(c, i, n){
   const T = TYPES[c.type];
-  const sx = [300, 700, 420, 580][i], sy = 480;
+  const sx = n <= 4 ? [300, 700, 420, 580][i] : STAGE.x0 + 50 + (STAGE.x1 - STAGE.x0 - 100) * (i + .5) / n, sy = n <= 4 ? 480 : 260 + (i % 3) * 70;
   return Object.assign({}, c, {i, T, A: ATKS[c.atk], S: SPS[c.sp], x: sx, y: sy, vx: 0, vy: 0, face: c.face, dir: i % 2 ? -1 : 1,
     pct: 0, stock: nStock, ground: false, jumps: T.jumps, upB: true, stun: 0, inv: 1.5, cd: .5 + R() * .4, spCd: 2 + R() * 3,
     atkT: 0, atkHit: new Set(), spT: 0, spKind: null, shield: 0, dead: false, respawn: 0, target: null, tgtT: 0, think: 0, drop: 0,
-    ko: 0, dealt: 0, falls: 0, place: 0, outT: 0, last: null, rad: 30});
+    ko: 0, dealt: 0, falls: 0, place: 0, outT: 0, last: null, rad: 30, src: c,
+    vo: Object.fromEntries(VOICES.map(([k]) => [k, getVoice(c.id, k)]).filter(v => v[1]).map(([k, u]) => [k, new Audio(u)])), voT: 0});
 }
-function startFight(){
-  F = roster.slice(0, nFighters).map((c, i) => makeFighter(c, i));
+let lastList = [];
+function startFight(list){
+  lastList = list; setupStage(list.length);
+  F = list.map((c, i) => makeFighter(c, i, list.length));
   projs = []; sparks = []; clock = 180; speedMul = 1; $('spd').textContent = '×1'; shake = 0; endT = 0; slowmo = 0; acc = 0;
   show('s-fight'); resize(); buildHud();
+  if (mode === 1 && tour) banner(tour.label, 900);
   banner('READY', 900); setTimeout(() => { banner('GO!', 700); running = true; speak('ゴー！'); }, 1000);
   speak('レディー');
   running = false; lastT = performance.now(); requestAnimationFrame(frame);
 }
 function banner(t, ms){ const b = $('banner'); b.textContent = t; b.style.display = 'block'; clearTimeout(b._t); b._t = setTimeout(() => b.style.display = 'none', ms); }
 function buildHud(){
-  $('hud').innerHTML = F.map(f => `<div class="hc" id="hc${f.i}" style="border-color:${f.color}"><div class="n">${f.face} ${esc(f.name)}</div><div class="p" id="hp${f.i}">0%</div><div class="sk" id="hs${f.i}"></div></div>`).join('');
+  $('hud').className = F.length > 8 ? 'l' : F.length > 4 ? 'm' : '';
+  $('hud').innerHTML = F.map(f => `<div class="hc" id="hc${f.i}" style="border-color:${f.color}"><div class="n">${f.face} <span class="nm">${esc(f.name)}</span></div><div class="p" id="hp${f.i}">0%</div><div class="sk" id="hs${f.i}"></div></div>`).join('');
   updHud();
 }
 function updHud(){
@@ -277,7 +405,18 @@ function hit(att, def, dmg, kb, g, ang, fromX){
   sfx(v > 1100 ? 'smash' : 'hit');
   return true;
 }
+let voiceLog = [];
+function voice(f, k, p = 1){
+  const a = voOn && f.vo && f.vo[k]; if (!a) return false;
+  const now = performance.now();
+  voiceLog = voiceLog.filter(t => now - t < 900);
+  if (k === 'atk' && (R() > p || now < f.voT || voiceLog.length >= 2)) return false;
+  if (k !== 'ko' && voiceLog.length >= 3) return false;
+  try { a.currentTime = 0; a.play().catch(() => {}); } catch(e){ return false; }
+  f.voT = now + 1400; voiceLog.push(now); return true;
+}
 function doAttack(f){
+  voice(f, 'atk', F.length > 4 ? .2 : .4);
   const A = f.A; f.atkT = A.act + .12; f.atkHit = new Set(); f.cd = A.cd;
   if (A.proj){
     projs.push({o: f, x: f.x + f.dir * 30, y: f.y - 6, vx: A.proj.v * f.dir, vy: 0, r: A.proj.r, life: A.proj.life, dmg: A.dmg, kb: A.kb, g: A.g, e: A.e, ang: .35});
@@ -293,7 +432,7 @@ function meleeCheck(f){
 }
 function doSpecial(f, tg){
   f.spCd = f.S.cd * (.85 + R() * .3); f.spKind = f.c_sp = f.sp; f.spT = 0; f.atkHit = new Set();
-  sfx('sp'); sparks.push({x: f.x, y: f.y, t: 0, k: 'txt', s: f.S.e + f.S.n, c: f.color});
+  sfx('sp'); voice(f, 'sp'); sparks.push({x: f.x, y: f.y, t: 0, k: 'txt', s: f.S.e + f.S.n, c: f.color});
   switch (f.sp){
     case 'dash': f.vx = f.dir * 1050 * f.T.spd; f.vy = -120; f.spT = .38; break;
     case 'cannon': projs.push({o: f, x: f.x + f.dir * 34, y: f.y - 8, vx: 430 * f.dir, vy: 0, r: 30, life: 1.6, dmg: 15, kb: 7, g: .13, e: '💥', ang: .6, big: true}); f.spKind = null; break;
@@ -435,11 +574,11 @@ function ko(f){
   shake = 22; sfx('ko'); updHud();
   const left = alive();
   if (f.stock <= 0) f.place = left.length + 1;
-  speak(f.stock > 0 ? `${f.name}、ふっとんだ！` : `${f.name}、脱落！`);
+  if (!voice(f, 'ko') && F.length <= 6) speak(f.stock > 0 ? `${f.name}、ふっとんだ！` : `${f.name}、脱落！`);
   if (left.length <= 1 && !endT){ endT = 1.8; running = false; banner('GAME SET', 1800); left.forEach(w => w.place = 1); setTimeout(() => speak('ゲームセット！'), 400); }
 }
 function respawn(f){
-  f.dead = false; f.x = 500; f.y = 150; f.vx = 0; f.vy = 0; f.pct = 0; f.inv = 2; f.stun = 0; f.jumps = f.T.jumps; f.upB = true; f.spKind = null; f.atkT = 0; f.last = null; updHud();
+  f.dead = false; f.x = 500 + (R() - .5) * Math.min(400, STAGE.x1 - STAGE.x0 - 200); f.y = 150; f.vx = 0; f.vy = 0; f.pct = 0; f.inv = 2; f.stun = 0; f.jumps = f.T.jumps; f.upB = true; f.spKind = null; f.atkT = 0; f.last = null; updHud();
 }
 function stepProj(dt){
   projs.forEach(p => {
@@ -481,11 +620,11 @@ function frame(now){
 function draw(){
   const d = cv._d || 1, Wp = cv.width / d, Hp = cv.height / d;
   // カメラ：みんなが入るように寄ったり引いたり
-  const pts = F.filter(f => !f.dead && f.x > -40 && f.x < 1040 && f.y < 800).map(f => [f.x, clamp(f.y, 60, 800)]);
+  const pts = F.filter(f => !f.dead && f.x > STAGE.x0 - 240 && f.x < STAGE.x1 + 240 && f.y < 800).map(f => [f.x, clamp(f.y, 60, 800)]);
   pts.push([STAGE.x0 + 40, STAGE.y], [STAGE.x1 - 40, STAGE.y]);
   let x0 = Math.min(...pts.map(p => p[0])) - 80, x1 = Math.max(...pts.map(p => p[0])) + 80;
   let y0 = Math.min(...pts.map(p => p[1])) - 120, y1 = Math.max(...pts.map(p => p[1])) + 150;
-  const hudH = 90, topH = 50, vw = Wp, vh = Hp - hudH - topH;
+  const hudH = $('hud').offsetHeight || 90, topH = 50, vw = Wp, vh = Hp - hudH - topH;
   const z = clamp(Math.min(vw / (x1 - x0), vh / (y1 - y0)), .3, Wp > Hp ? 1.3 : 1);
   cam.z += (z - cam.z) * .06; cam.x += ((x0 + x1) / 2 - cam.x) * .08; cam.y += ((y0 + y1) / 2 - cam.y) * .08;
   ctx.setTransform(d, 0, 0, d, 0, 0);
@@ -496,7 +635,7 @@ function draw(){
   ctx.translate(Wp / 2 + sx, topH + vh / 2 + sy); ctx.scale(cam.z, cam.z); ctx.translate(-cam.x, -cam.y);
   // 星
   ctx.fillStyle = '#ffffff30';
-  for (let i = 0; i < 60; i++){ const x = (i * 197) % 1800 - 400, y = (i * 131) % 1200 - 400; ctx.fillRect(x + (cam.x - 500) * .5, y + (cam.y - 450) * .5, 3, 3); }
+  for (let i = 0; i < 80; i++){ const x = (i * 197) % 2400 - 700, y = (i * 131) % 1200 - 400; ctx.fillRect(x + (cam.x - 500) * .5, y + (cam.y - 450) * .5, 3, 3); }
   // ステージ
   ctx.fillStyle = '#3e4396'; ctx.beginPath();
   ctx.moveTo(STAGE.x0, STAGE.y); ctx.lineTo(STAGE.x1, STAGE.y); ctx.lineTo(STAGE.x1 - 40, STAGE.y + 110); ctx.lineTo(STAGE.x0 + 40, STAGE.y + 110); ctx.fill();
@@ -531,7 +670,7 @@ function draw(){
     ctx.restore();
     // 名前と%
     const fs = Math.max(15, 11 / cam.z); ctx.fillStyle = '#fff'; ctx.font = `900 ${fs}px sans-serif`; ctx.textAlign = 'center';
-    ctx.fillText(`${f.name}`, f.x, f.y - f.rad - fs * 1.5);
+    if (F.length <= 6) ctx.fillText(`${f.name}`, f.x, f.y - f.rad - fs * 1.5);
     ctx.fillStyle = f.pct < 100 ? '#ffe082' : '#ff6e6e'; ctx.fillText(`${Math.floor(f.pct)}%`, f.x, f.y - f.rad - fs * .4);
   });
   // 画面の外にいる人の矢印
@@ -569,18 +708,72 @@ function result(){
   $('rsList').innerHTML = ord.map((f, k) => `<div class="rr" style="border-left:6px solid ${f.color}"><div class="r">${k + 1}位</div><div class="a">${f.face}</div>
     <div><b>${esc(f.name)}</b>${f.human ? '' : ' <span class="cpu">CPU</span>'}<div class="t">${TYPES[f.type].n}・${ATKS[f.atk].n}・${SPS[f.sp].n}</div>
     <div class="t">ふっとばした ${f.ko}回 ／ あたえたダメージ ${Math.round(f.dealt)}% ／ 落ちた ${f.falls}回</div></div></div>`).join('');
-  show('s-res'); speak(`${w.name}の勝ち！`, 1, 1);
+  const inTour = mode === 1 && tour;
+  if (inTour){ const m = tour.rounds[tour.cur.r][tour.cur.m]; m.w = w.src.id; advance(); }
+  $('rsTour').style.display = inTour ? '' : 'none';
+  $('rsAgain').style.display = inTour ? 'none' : '';
+  $('rsSlots').style.display = inTour ? 'none' : '';
+  show('s-res'); setTimeout(() => { if (!voice(w, 'sp')) speak(`${w.name}の勝ち！`, 1, 1); }, 200);
 }
-$('rsAgain').onclick = startFight;
+$('rsAgain').onclick = () => startFight(lastList);
+$('rsTour').onclick = drawTour;
+
+/* ----- トーナメント（1試合4人まで。勝った1人が次へ） ----- */
+let tour = null;
+function groupSizes(k){
+  const g = Math.ceil(k / 4), base = Math.floor(k / g), extra = k % g;
+  return Array.from({length: g}, (_, i) => base + (i >= g - extra ? 1 : 0));   // 例：5人→[2,3]
+}
+function startTour(){
+  const list = roster.slice(0, nFighters).sort(() => R() - .5);
+  const rounds = []; let k = list.length;
+  while (k > 1){ const sz = groupSizes(k); rounds.push(sz.map(n => ({ps: new Array(n).fill(undefined), w: null}))); k = sz.length; }
+  let i = 0; rounds[0].forEach(m => m.ps = m.ps.map(() => list[i++]));
+  tour = {rounds, cur: null, label: ''};
+  drawTour();
+}
+const byId = id => roster.find(c => c && c.id === id);
+function advance(){
+  // 勝った人を次の回戦の空いている席へ順番に入れる
+  tour.rounds.forEach((rd, r) => {
+    if (r + 1 >= tour.rounds.length) return;
+    const slots = tour.rounds[r + 1].flatMap((m, gi) => m.ps.map((_, pi) => [gi, pi]));
+    rd.forEach((m, i) => { if (m.w){ const [gi, pi] = slots[i]; tour.rounds[r + 1][gi].ps[pi] = byId(m.w); } });
+  });
+}
+const RNAME = (r, n) => r === n - 1 ? '決勝' : `${r + 1}回戦`;
+function drawTour(){
+  const n = tour.rounds.length; let next = null;
+  tour.rounds.forEach((rd, r) => rd.forEach((m, i) => { if (!next && m.w == null && m.ps.every(Boolean)) next = {r, m: i}; }));
+  const champ = tour.rounds[n - 1][0].w ? byId(tour.rounds[n - 1][0].w) : null;
+  const pl = (c, m) => !c ? '<div class="pl" style="color:var(--mut)">？</div>'
+    : `<div class="pl ${m.w ? (m.w === c.id ? 'wn' : 'ls') : ''}"><span class="dot" style="background:${c.color}">${c.face}</span>${esc(c.name)}</div>`;
+  $('trList').innerHTML = tour.rounds.map((rd, r) => `<div class="rd"><h3>${RNAME(r, n)}</h3>${rd.map((m, i) =>
+    `<div class="mt${next && next.r === r && next.m === i ? ' nx' : ''}" style="flex-wrap:wrap">${m.ps.length > 2 ? m.ps.map(c => pl(c, m).replace('class="pl', 'style="flex:0 0 46%" class="pl')).join('') : m.ps.map(c => pl(c, m)).join('<span class="vs">vs</span>')}</div>`).join('')}</div>`).join('');
+  $('trChamp').innerHTML = champ ? `<div style="text-align:center"><div class="win" style="margin-top:2vh">👑</div><span style="display:inline-grid;place-items:center;width:110px;height:110px;border-radius:50%;background:${champ.color};border:5px solid #fff;font-size:64px">${champ.face}</span><h1 style="margin:8px 0;font-size:clamp(24px,7vw,38px)">${esc(champ.name)} 優勝！</h1></div>` : '';
+  $('trTitle').textContent = champ ? 'トーナメント結果' : `トーナメント（${nFighters}人）`;
+  tour.cur = next;
+  if (next){
+    const m = tour.rounds[next.r][next.m];
+    tour.label = RNAME(next.r, n) + (tour.rounds[next.r].length > 1 ? ` 第${next.m + 1}試合` : '');
+    $('trGo').textContent = `${tour.label}をはじめる`; $('trGo').style.display = '';
+    $('trGo').onclick = () => startFight(m.ps.slice());
+    $('trQuit').textContent = 'やめる';
+  } else { $('trGo').style.display = 'none'; $('trQuit').textContent = 'タイトルへ'; if (champ) speak(`優勝は、${champ.name}！`); }
+  show('s-tour'); $('s-tour').scrollTop = 0;
+  if (next) setTimeout(() => { const el = $('trList').querySelector('.nx'); el && el.scrollIntoView({block: 'center'}); }, 50);
+}
+$('trQuit').onclick = () => { tour = null; show('s-title'); };
 $('rsSlots').onclick = () => { drawSlots(); show('s-slots'); };
 $('rsTitle').onclick = () => show('s-title');
-$('fight').onclick = () => { save(); startFight(); };
+$('fight').onclick = () => { save(); mode = nFighters >= 5 ? 1 : 0; if (mode === 1) startTour(); else startFight(roster.slice(0, nFighters)); };
 $('spd').onclick = () => { speedMul = speedMul === 1 ? 2 : speedMul === 2 ? 4 : 1; $('spd').textContent = '×' + speedMul; };
-$('quit').onclick = () => { running = false; show('s-slots'); drawSlots(); };
+$('quit').onclick = () => { running = false; if (mode === 1 && tour) drawTour(); else { show('s-slots'); drawSlots(); } };
 window.onBack = () => {
   if ($('s-fight').classList.contains('on')) $('quit').onclick();
   else if ($('s-make').classList.contains('on')) show('s-slots');
-  else if ($('s-slots').classList.contains('on') || $('s-res').classList.contains('on')) show('s-title');
+  else if ($('s-res').classList.contains('on') && mode === 1 && tour) drawTour();
+  else if ($('s-slots').classList.contains('on') || $('s-res').classList.contains('on') || $('s-tour').classList.contains('on')) show('s-title');
 };
 
 /* ----- 効果音 ----- */
