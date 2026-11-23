@@ -72,7 +72,8 @@ input.name{width:min(560px,100%);font-weight:900;font-size:22px;font-family:inhe
 .vo .sm{display:flex;gap:4px;margin-top:5px}
 .vo .sm button{flex:1;border:0;border-radius:8px;background:#3b3f8f;color:#fff;font-size:15px;padding:5px 0}
 .vo .sm button:disabled{opacity:.3}
-.vo .lb{font-size:11px;color:var(--mut);margin-top:3px}
+.vo .lb{font-size:11px;color:var(--mut);margin-top:5px;line-height:1.5}
+.vo .sm button.t{font-size:13px;font-weight:900;font-family:inherit}
 /* トーナメント表 */
 .rd{width:min(520px,100%);margin:6px 0}
 .rd h3{margin:10px 0 4px;font-size:15px;color:var(--acc)}
@@ -107,7 +108,7 @@ input.name{width:min(560px,100%);font-weight:900;font-size:22px;font-family:inhe
   <p class="mut" id="nMode" style="margin:4px 0 0"></p>
   <div class="sec" style="text-align:center">ストック</div>
   <div class="row seg" id="stk"><button data-n="1">1</button><button data-n="2">2</button><button data-n="3" class="on">3</button></div>
-  <div class="sec" style="text-align:center">録音した声</div>
+  <div class="sec" style="text-align:center">キャラの声（録音したセリフ）</div>
   <div class="row seg" id="voOn"><button data-n="1" class="on">あり</button><button data-n="0">なし</button></div>
   <div class="sec" style="text-align:center">実況（読み上げ）</div>
   <div class="row seg" id="ttsOn"><button data-n="1" class="on">あり</button><button data-n="0">なし</button></div>
@@ -132,7 +133,7 @@ input.name{width:min(560px,100%);font-weight:900;font-size:22px;font-family:inhe
   <div class="sec">タイプ</div><div class="grid g3" id="mkType"></div>
   <div class="sec">ふつうのわざ</div><div class="grid g3" id="mkAtk"></div>
   <div class="sec">ひっさつわざ（ときどき使う）</div><div class="grid g3" id="mkSp"></div>
-  <div class="sec">こえ（その場で録音・1つ3秒まで）</div><div class="grid g3" id="mkVoice"></div>
+  <div class="sec">こうげきのセリフ（その場で録音・3秒まで）</div><div id="mkVoice" style="width:min(560px,100%)"></div>
   <div class="stats"><div class="prev"><div class="av" id="mkAv"></div><div id="mkDesc" style="font-size:13px;line-height:1.5"></div></div><div id="mkStats"></div></div>
   <div class="row" style="margin-top:10px"><button class="btn s" id="mkRand" style="min-width:140px">🎲 おまかせ</button><button class="btn" id="mkOk" style="min-width:140px">けってい</button></div>
 </section>
@@ -215,10 +216,11 @@ function save(){
   } catch(e){}
 }
 /* 声：攻撃・必殺・やられた */
-const VOICES = [['atk', '🗣️ こうげき'], ['sp', '🔥 ひっさつ'], ['ko', '😵 やられた']];
+const VOICES = [['atk', '🗣️ こうげき']];   // 録音は攻撃のセリフだけ。必殺・やられたはここから自動で作る
 const vkey = (id, k) => `smb_v_${id}_${k}`;
 const getVoice = (id, k) => { try { return localStorage.getItem(vkey(id, k)); } catch(e){ return null; } };
 const voiceCount = c => VOICES.filter(([k]) => getVoice(c.id, k)).length;
+try { Object.keys(localStorage).filter(k => /^smb_v_.*_(sp|ko)$/.test(k)).forEach(k => localStorage.removeItem(k)); } catch(e){}   // 旧版の録音を消す
 function randChar(human){
   const usedC = roster.map(r => r && r.color), usedF = roster.map(r => r && r.face);
   const face = pick(FACES.filter(f => !usedF.includes(f)).concat(FACES.length ? [] : FACES)) || pick(FACES);
@@ -240,6 +242,7 @@ function setN(n){ nFighters = clamp(n, 2, 16); mode = nFighters >= 5 ? 1 : 0; $(
 $('nMinus').onclick = () => setN(nFighters - 1); $('nPlus').onclick = () => setN(nFighters + 1); setN(nFighters);
 function speak(t, pitch = 1, rate = 1.1){
   if (typeof ttsOn !== 'undefined' && !ttsOn) return;
+  if (typeof lineUntil !== 'undefined' && performance.now() < lineUntil) return;   // キャラのセリフ中は実況しない
   try {
     if (window.Android && Android.speak) Android.speak(t, pitch, rate);
     else if (window.speechSynthesis){ const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.pitch = pitch; u.rate = rate; speechSynthesis.cancel(); speechSynthesis.speak(u); }
@@ -252,7 +255,7 @@ function drawSlots(){
   $('slots').innerHTML = roster.slice(0, nFighters).map((c, i) => `<div class="slot">
     <div class="av" style="background:${c.color}">${c.face}</div>
     <div><div class="nm">${esc(c.name)}${c.human ? '' : '<span class="cpu">CPU</span>'}</div>
-      <div class="sub">${TYPES[c.type].e}${TYPES[c.type].n}・${ATKS[c.atk].e}${ATKS[c.atk].n}・${SPS[c.sp].e}${SPS[c.sp].n}${voiceCount(c) ? `・🎙️${voiceCount(c)}` : ''}</div></div>
+      <div class="sub">${TYPES[c.type].e}${TYPES[c.type].n}・${ATKS[c.atk].e}${ATKS[c.atk].n}・${SPS[c.sp].e}${SPS[c.sp].n}${voiceCount(c) ? '・🎙️' : ''}</div></div>
     <div class="act"><button class="k" data-m="${i}">つくる</button><button data-r="${i}">CPU</button></div></div>`).join('');
   $('slots').querySelectorAll('[data-m]').forEach(b => b.onclick = () => make(+b.dataset.m));
   $('slots').querySelectorAll('[data-r]').forEach(b => b.onclick = () => { const i = +b.dataset.r; roster[i] = null; roster[i] = randChar(false); save(); drawSlots(); });
@@ -282,17 +285,79 @@ function renderMake(){
 }
 let rec = null;
 function renderVoice(){
-  $('mkVoice').innerHTML = VOICES.map(([k, lb]) => {
-    const has = !!getVoice(mk.id, k), on = rec && rec.kind === k;
-    return `<div class="vo"><button class="rec${on ? ' on' : ''}" data-r="${k}">${on ? '⏺ 録音中…（タップで止める）' : '🎙️ ' + (has ? '録りなおす' : '録音する')}</button>
-      <div class="sm"><button data-p="${k}"${has ? '' : ' disabled'}>▶</button><button data-d="${k}"${has ? '' : ' disabled'}>🗑</button></div>
-      <div class="lb">${lb}</div></div>`;
-  }).join('');
+  const has = !!getVoice(mk.id, 'atk'), on = rec && rec.kind === 'atk', dis = has ? '' : ' disabled';
+  $('mkVoice').innerHTML = `<div class="vo"><button class="rec${on ? ' on' : ''}" data-r="atk">${on ? '⏺ 録音中…（タップで止める）' : '🎙️ ' + (has ? '録りなおす' : '攻撃のセリフを録音する')}</button>
+    <div class="sm"><div style="flex:1;font-weight:900;font-size:13px;align-self:center">${has ? '✅ 録音ずみ' : '未録音'}</div><button data-d="atk"${dis} style="flex:0 0 52px">🗑</button></div>
+    <div class="lb">ひっさつ（くらえ！／ひっさつ！／うおおおー！）とやられた（やられたー！／くそー！／まけました…）は、録音した声の高さに合わせて自動でしゃべります。</div></div>`;
   $('mkVoice').querySelectorAll('[data-r]').forEach(b => b.onclick = () => recVoice(b.dataset.r));
-  $('mkVoice').querySelectorAll('[data-p]').forEach(b => b.onclick = () => playData(getVoice(mk.id, b.dataset.p)));
-  $('mkVoice').querySelectorAll('[data-d]').forEach(b => b.onclick = () => { try { localStorage.removeItem(vkey(mk.id, b.dataset.d)); } catch(e){} renderVoice(); });
+  $('mkVoice').querySelectorAll('[data-d]').forEach(b => b.onclick = () => { try { localStorage.removeItem(vkey(mk.id, 'atk')); } catch(e){} renderVoice(); });
 }
-function playData(u){ if (!u) return; try { const a = new Audio(u); a.play().catch(() => {}); } catch(e){} }
+/* 録音した声を加工して鳴らす */
+function audioCtx(){ AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); return AC; }
+const decoded = new Map();
+const LINES = {sp: ['くらえ！', 'ひっさつ！', 'うおおおー！'], ko: ['やられたー！', 'くそー！', 'まけました…']};
+// 録音した声の高さ（Hz）を自己相関でざっくり測る
+function voicePitch(buf){
+  if (buf._f0) return buf._f0;
+  const d = buf.getChannelData(0), sr = buf.sampleRate, N = Math.floor(sr * .04), f0s = [];
+  for (let st = 0; st + N * 2 < d.length; st += N){
+    let e = 0; for (let i = 0; i < N; i++) e += d[st + i] ** 2;
+    if (e / N < 1e-4) continue;
+    const lo = Math.floor(sr / 500), hi = Math.floor(sr / 70), cs = [];
+    for (let lag = lo; lag < hi; lag++){ let c = 0; for (let i = 0; i < N; i++) c += d[st + i] * d[st + i + lag]; cs.push(c); }
+    const mx = Math.max(...cs); let best = 0, bl = 0;
+    // いちばん短い周期の山を選ぶ（倍の周期をひろわないように）
+    for (let k = 1; k < cs.length - 1; k++) if (cs[k] >= mx * .88 && cs[k] >= cs[k - 1] && cs[k] >= cs[k + 1]){ best = cs[k]; bl = k + lo; break; }
+    if (bl && best / e > .3) f0s.push(sr / bl);
+  }
+  f0s.sort((a, b) => a - b);
+  buf._f0 = f0s.length ? f0s[f0s.length >> 1] : 200;
+  return buf._f0;
+}
+// セリフを、録音した声と同じくらいの高さの読み上げでしゃべる
+function sayLine(buf, kind){
+  const t = pick(LINES[kind]), pitch = clamp(voicePitch(buf) / 190, .55, 2), rate = kind === 'sp' ? 1.2 : .95;
+  try {
+    if (window.Android && Android.speak){ Android.speak(t, pitch, rate); return true; }
+    if (window.speechSynthesis){ const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.pitch = Math.min(2, pitch); u.rate = rate; speechSynthesis.cancel(); speechSynthesis.speak(u); return true; }
+  } catch(e){}
+  return playVoice(buf, kind);   // 読み上げが使えないときは録音を加工して鳴らす
+}
+async function decodeVoice(u){
+  if (!u) return null;
+  if (decoded.has(u)) return decoded.get(u);
+  try {
+    const ab = await (await fetch(u)).arrayBuffer();
+    const buf = await new Promise((ok, ng) => { const p = audioCtx().decodeAudioData(ab, ok, ng); if (p && p.catch) p.catch(ng); });
+    decoded.set(u, buf); return buf;
+  } catch(e){ return null; }
+}
+function playVoice(buf, kind){
+  try {
+    const c = audioCtx(), t = c.currentTime, src = c.createBufferSource(), g = c.createGain();
+    src.buffer = buf; src.connect(g); g.connect(c.destination);
+    let dur = buf.duration;
+    if (kind === 'atk'){ src.playbackRate.value = .95 + R() * .12; g.gain.value = 1; }
+    if (kind === 'sp'){
+      // ひっさつ：低く・ゆっくり・大きく、やまびこのエコー
+      const r = .78; src.playbackRate.value = r; dur = buf.duration / r; g.gain.value = 1.25;
+      const d = c.createDelay(1), fb = c.createGain(), wet = c.createGain();
+      d.delayTime.value = .17; fb.gain.value = .42; wet.gain.value = .55;
+      g.connect(d); d.connect(fb); fb.connect(d); d.connect(wet); wet.connect(c.destination);
+      setTimeout(() => { try { fb.disconnect(); wet.disconnect(); } catch(e){} }, (dur + 1.6) * 1000);
+    }
+    if (kind === 'ko'){
+      // やられた：高い声から下がっていき、ふるえながら消える
+      const r0 = 1.35, r1 = .55; dur = buf.duration / ((r0 + r1) / 2);
+      src.playbackRate.setValueAtTime(r0, t); src.playbackRate.linearRampToValueAtTime(r1, t + dur);
+      const lfo = c.createOscillator(), lg = c.createGain(); lfo.frequency.value = 9; lg.gain.value = .07;
+      lfo.connect(lg); lg.connect(src.playbackRate); lfo.start(t); lfo.stop(t + dur + .1);
+      g.gain.setValueAtTime(1.1, t); g.gain.linearRampToValueAtTime(.0001, t + dur);
+    }
+    src.start(t); src.stop(t + dur + .05);
+    return true;
+  } catch(e){ return false; }
+}
 async function recVoice(kind){
   if (rec){ const same = rec.kind === kind; rec.stop(); if (same) return; await new Promise(r => setTimeout(r, 300)); }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder){ alert('この端末・ブラウザでは録音できません'); return; }
@@ -314,7 +379,6 @@ async function recVoice(kind){
       catch(e){ alert('保存できる容量がいっぱいです。使わないキャラの声を消してください。'); }
       if (rec === me) rec = null;
       if (mk && mk.id === id) renderVoice();
-      playData(fr.result);
     };
     fr.readAsDataURL(new Blob(chunks, {type: mr.mimeType || 'audio/webm'}));
   };
@@ -356,12 +420,13 @@ function makeFighter(c, i, n){
     pct: 0, stock: nStock, ground: false, jumps: T.jumps, upB: true, stun: 0, inv: 1.5, cd: .5 + R() * .4, spCd: 2 + R() * 3,
     atkT: 0, atkHit: new Set(), spT: 0, spKind: null, shield: 0, dead: false, respawn: 0, target: null, tgtT: 0, think: 0, drop: 0,
     ko: 0, dealt: 0, falls: 0, place: 0, outT: 0, last: null, rad: 30, src: c,
-    vo: Object.fromEntries(VOICES.map(([k]) => [k, getVoice(c.id, k)]).filter(v => v[1]).map(([k, u]) => [k, new Audio(u)])), voT: 0});
+    vo: null, voT: 0});
 }
 let lastList = [];
 function startFight(list){
   lastList = list; setupStage(list.length);
   F = list.map((c, i) => makeFighter(c, i, list.length));
+  F.forEach(f => decodeVoice(getVoice(f.id, 'atk')).then(b => { f.vo = b; }));
   projs = []; sparks = []; clock = 180; speedMul = 1; $('spd').textContent = '×1'; shake = 0; endT = 0; slowmo = 0; acc = 0;
   show('s-fight'); resize(); buildHud();
   if (mode === 1 && tour) banner(tour.label, 900);
@@ -405,14 +470,15 @@ function hit(att, def, dmg, kb, g, ang, fromX){
   sfx(v > 1100 ? 'smash' : 'hit');
   return true;
 }
-let voiceLog = [];
+let voiceLog = [], lineUntil = 0;
 function voice(f, k, p = 1){
-  const a = voOn && f.vo && f.vo[k]; if (!a) return false;
+  if (!voOn || !f.vo) return false;
   const now = performance.now();
   voiceLog = voiceLog.filter(t => now - t < 900);
   if (k === 'atk' && (R() > p || now < f.voT || voiceLog.length >= 2)) return false;
   if (k !== 'ko' && voiceLog.length >= 3) return false;
-  try { a.currentTime = 0; a.play().catch(() => {}); } catch(e){ return false; }
+  if (!(k === 'atk' ? playVoice(f.vo, k) : sayLine(f.vo, k))) return false;
+  if (k !== 'atk') lineUntil = now + 1500;
   f.voT = now + 1400; voiceLog.push(now); return true;
 }
 function doAttack(f){
