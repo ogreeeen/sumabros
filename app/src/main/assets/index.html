@@ -133,7 +133,7 @@ input.name{width:min(560px,100%);font-weight:900;font-size:22px;font-family:inhe
   <div class="sec">タイプ</div><div class="grid g3" id="mkType"></div>
   <div class="sec">ふつうのわざ</div><div class="grid g3" id="mkAtk"></div>
   <div class="sec">ひっさつわざ（ときどき使う）</div><div class="grid g3" id="mkSp"></div>
-  <div class="sec">こうげきのセリフ（その場で録音・3秒まで）</div><div id="mkVoice" style="width:min(560px,100%)"></div>
+  <div class="sec">こえ</div><div class="grid g3" id="mkVt" style="grid-template-columns:repeat(4,1fr)"></div><div id="mkVoice" style="width:min(560px,100%);margin-top:6px"></div>
   <div class="stats"><div class="prev"><div class="av" id="mkAv"></div><div id="mkDesc" style="font-size:13px;line-height:1.5"></div></div><div id="mkStats"></div></div>
   <div class="row" style="margin-top:10px"><button class="btn s" id="mkRand" style="min-width:140px">🎲 おまかせ</button><button class="btn" id="mkOk" style="min-width:140px">けってい</button></div>
 </section>
@@ -255,7 +255,7 @@ function drawSlots(){
   $('slots').innerHTML = roster.slice(0, nFighters).map((c, i) => `<div class="slot">
     <div class="av" style="background:${c.color}">${c.face}</div>
     <div><div class="nm">${esc(c.name)}${c.human ? '' : '<span class="cpu">CPU</span>'}</div>
-      <div class="sub">${TYPES[c.type].e}${TYPES[c.type].n}・${ATKS[c.atk].e}${ATKS[c.atk].n}・${SPS[c.sp].e}${SPS[c.sp].n}${voiceCount(c) ? '・🎙️' : ''}</div></div>
+      <div class="sub">${TYPES[c.type].e}${TYPES[c.type].n}・${ATKS[c.atk].e}${ATKS[c.atk].n}・${SPS[c.sp].e}${SPS[c.sp].n}${{m: '・👨', f: '・👩', rec: '・🎙️'}[vtypeOf(c)] || ''}</div></div>
     <div class="act"><button class="k" data-m="${i}">つくる</button><button data-r="${i}">CPU</button></div></div>`).join('');
   $('slots').querySelectorAll('[data-m]').forEach(b => b.onclick = () => make(+b.dataset.m));
   $('slots').querySelectorAll('[data-r]').forEach(b => b.onclick = () => { const i = +b.dataset.r; roster[i] = null; roster[i] = randChar(false); save(); drawSlots(); });
@@ -285,17 +285,23 @@ function renderMake(){
 }
 let rec = null;
 function renderVoice(){
+  const vt = vtypeOf(mk);
+  $('mkVt').innerHTML = VTYPES.map(([k, n]) => `<button class="opt${vt === k ? ' on' : ''}" data-k="${k}">${n}</button>`).join('');
+  $('mkVt').querySelectorAll('button').forEach(b => b.onclick = () => { mk.vtype = b.dataset.k; renderVoice(); });
+  if (vt !== 'rec'){ $('mkVoice').innerHTML = vt === 'none' ? '' : `<div class="lb" style="font-size:12px;color:var(--mut);line-height:1.6">${vt === 'm' ? '男性' : '女性'}のテンプレの声でしゃべります（こうげき：えいっ！など／ひっさつ：くらえ！など／やられた：くそー！など）。</div>`; return; }
   const has = !!getVoice(mk.id, 'atk'), on = rec && rec.kind === 'atk', dis = has ? '' : ' disabled';
   $('mkVoice').innerHTML = `<div class="vo"><button class="rec${on ? ' on' : ''}" data-r="atk">${on ? '⏺ 録音中…（タップで止める）' : '🎙️ ' + (has ? '録りなおす' : '攻撃のセリフを録音する')}</button>
     <div class="sm"><div style="flex:1;font-weight:900;font-size:13px;align-self:center">${has ? '✅ 録音ずみ' : '未録音'}</div><button data-d="atk"${dis} style="flex:0 0 52px">🗑</button></div>
-    <div class="lb">ひっさつ（くらえ！／ひっさつ！／うおおおー！）とやられた（やられたー！／くそー！／まけました…）は、録音した声の高さに合わせて自動でしゃべります。</div></div>`;
+    <div class="lb">録音するのは「こうげき」のセリフ（3秒まで）。ひっさつ（くらえ！など）とやられた（くそー！など）は、録音した声の高さに合わせて自動でしゃべります。</div></div>`;
   $('mkVoice').querySelectorAll('[data-r]').forEach(b => b.onclick = () => recVoice(b.dataset.r));
   $('mkVoice').querySelectorAll('[data-d]').forEach(b => b.onclick = () => { try { localStorage.removeItem(vkey(mk.id, 'atk')); } catch(e){} renderVoice(); });
 }
 /* 録音した声を加工して鳴らす */
 function audioCtx(){ AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); return AC; }
 const decoded = new Map();
-const LINES = {sp: ['くらえ！', 'ひっさつ！', 'うおおおー！'], ko: ['やられたー！', 'くそー！', 'まけました…']};
+const LINES = {atk: ['えいっ！', 'はっ！', 'とりゃー！', 'それっ！'], sp: ['くらえ！', 'ひっさつ！', 'うおおおー！'], ko: ['やられたー！', 'くそー！', 'まけました…']};
+const VTYPES = [['none', '🔇 なし'], ['m', '👨 男性'], ['f', '👩 女性'], ['rec', '🎙️ 録音']];
+const vtypeOf = c => c.vtype || (getVoice(c.id, 'atk') ? 'rec' : 'none');
 // 録音した声の高さ（Hz）を自己相関でざっくり測る
 function voicePitch(buf){
   if (buf._f0) return buf._f0;
@@ -315,13 +321,16 @@ function voicePitch(buf){
   return buf._f0;
 }
 // セリフを、録音した声と同じくらいの高さの読み上げでしゃべる
-function sayLine(buf, kind){
-  const t = pick(LINES[kind]), pitch = clamp(voicePitch(buf) / 190, .55, 2), rate = kind === 'sp' ? 1.2 : .95;
+function sayLine(src, kind){
+  // src：録音（AudioBuffer）か、テンプレの声 'm' / 'f'
+  const t = pick(LINES[kind]);
+  const pitch = src === 'm' ? .72 : src === 'f' ? 1.55 : clamp(voicePitch(src) / 190, .55, 2);
+  const rate = kind === 'ko' ? .95 : 1.2;
   try {
     if (window.Android && Android.speak){ Android.speak(t, pitch, rate); return true; }
     if (window.speechSynthesis){ const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.pitch = Math.min(2, pitch); u.rate = rate; speechSynthesis.cancel(); speechSynthesis.speak(u); return true; }
   } catch(e){}
-  return playVoice(buf, kind);   // 読み上げが使えないときは録音を加工して鳴らす
+  return typeof src === 'string' ? false : playVoice(src, kind);   // 読み上げが使えないときは録音を加工して鳴らす
 }
 async function decodeVoice(u){
   if (!u) return null;
@@ -393,7 +402,7 @@ function make(i){
 }
 $('mkName').oninput = renderMake;
 $('mkRand').onclick = () => { const r = randChar(true); Object.assign(mk, {face: r.face, color: r.color, type: r.type, atk: r.atk, sp: r.sp}); renderMake(); };
-$('mkOk').onclick = () => { if (rec) rec.stop(); mk.name = ($('mkName').value || '').trim() || 'ななし'; mk.human = true; roster[mkIdx] = mk; save(); drawSlots(); show('s-slots'); };
+$('mkOk').onclick = () => { if (rec) rec.stop(); mk.vtype = vtypeOf(mk); mk.name = ($('mkName').value || '').trim() || 'ななし'; mk.human = true; roster[mkIdx] = mk; save(); drawSlots(); show('s-slots'); };
 
 /* ---------- バトル ---------- */
 const cv = $('cv'), ctx = cv.getContext('2d');
@@ -426,7 +435,7 @@ let lastList = [];
 function startFight(list){
   lastList = list; setupStage(list.length);
   F = list.map((c, i) => makeFighter(c, i, list.length));
-  F.forEach(f => decodeVoice(getVoice(f.id, 'atk')).then(b => { f.vo = b; }));
+  F.forEach(f => { const vt = vtypeOf(f.src); if (vt === 'm' || vt === 'f') f.vo = vt; else if (vt === 'rec') decodeVoice(getVoice(f.id, 'atk')).then(b => { f.vo = b; }); });
   projs = []; sparks = []; clock = 180; speedMul = 1; $('spd').textContent = '×1'; shake = 0; endT = 0; slowmo = 0; acc = 0;
   show('s-fight'); resize(); buildHud();
   if (mode === 1 && tour) banner(tour.label, 900);
@@ -477,8 +486,9 @@ function voice(f, k, p = 1){
   voiceLog = voiceLog.filter(t => now - t < 900);
   if (k === 'atk' && (R() > p || now < f.voT || voiceLog.length >= 2)) return false;
   if (k !== 'ko' && voiceLog.length >= 3) return false;
-  if (!(k === 'atk' ? playVoice(f.vo, k) : sayLine(f.vo, k))) return false;
-  if (k !== 'atk') lineUntil = now + 1500;
+  if (typeof f.vo === 'string' && k === 'atk' && now < lineUntil) return false;   // 読み上げは重ねない
+  if (!(k === 'atk' && typeof f.vo !== 'string' ? playVoice(f.vo, k) : sayLine(f.vo, k))) return false;
+  if (k !== 'atk' || typeof f.vo === 'string') lineUntil = now + (k === 'atk' ? 700 : 1500);
   f.voT = now + 1400; voiceLog.push(now); return true;
 }
 function doAttack(f){
