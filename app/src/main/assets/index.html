@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#1b1d4a">
+<title>オートバトルブラザーズ</title>
+<style>
+:root{--bg:#1b1d4a;--ink:#fff;--mut:#b9bce8;--card:#272a66;--line:#3b3f8f;--acc:#ffcc33}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Hiragino Maru Gothic ProN","Rounded Mplus 1c","Noto Sans JP",sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+.scr{position:fixed;inset:0;display:none;flex-direction:column;align-items:center;overflow-y:auto;padding:16px 14px 28px}
+.scr.on{display:flex}
+h1{font-size:clamp(28px,8vw,46px);margin:6vh 0 4px;text-align:center;line-height:1.15;font-style:italic;text-shadow:3px 3px 0 #e53935}
+h2{font-size:22px;margin:8px 0}
+.mut{color:var(--mut);font-size:14px;text-align:center;line-height:1.6}
+.btn{border:0;border-radius:14px;background:var(--acc);color:#1b1d4a;font-weight:900;font-size:19px;font-family:inherit;padding:13px 22px;margin:6px;min-width:220px;box-shadow:0 4px 0 #b38600}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #b38600}
+.btn.s{background:var(--card);color:#fff;box-shadow:0 4px 0 #11133a}
+.row{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.seg button{border:2px solid var(--line);background:var(--card);color:#fff;font-weight:900;font-size:22px;font-family:inherit;border-radius:12px;padding:10px 18px}
+.seg button.on{background:var(--acc);color:#1b1d4a;border-color:var(--acc)}
+.slot{display:flex;align-items:center;gap:12px;background:var(--card);border:2px solid var(--line);border-radius:16px;padding:10px 12px;margin:6px 0;width:min(520px,100%)}
+.slot .av{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-size:32px;flex:none;border:3px solid #fff}
+.slot .nm{font-weight:900;font-size:18px}
+.slot .sub{font-size:13px;color:var(--mut)}
+.slot .act{margin-left:auto;display:flex;flex-direction:column;gap:6px}
+.slot .act button{border:0;border-radius:10px;font-weight:900;font-family:inherit;font-size:14px;padding:7px 12px;background:#3b3f8f;color:#fff}
+.slot .act button.k{background:var(--acc);color:#1b1d4a}
+.cpu{font-size:11px;background:#e53935;border-radius:6px;padding:1px 6px;margin-left:6px;vertical-align:middle}
+.sec{width:min(560px,100%);margin:10px 0 2px;font-weight:900;font-size:15px;color:var(--acc)}
+.grid{display:grid;gap:6px;width:min(560px,100%)}
+.g6{grid-template-columns:repeat(6,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.opt{border:2px solid var(--line);background:var(--card);color:#fff;border-radius:12px;font-family:inherit;padding:6px 4px;font-size:13px;font-weight:900;line-height:1.3}
+.opt.on{border-color:var(--acc);background:#3a3c7a;box-shadow:0 0 0 2px var(--acc) inset}
+.opt .e{font-size:24px;display:block}
+.opt small{display:block;font-weight:400;color:var(--mut);font-size:11px}
+.col{height:38px;border-radius:10px;border:3px solid transparent}
+.col.on{border-color:#fff}
+input.name{width:min(560px,100%);font-weight:900;font-size:22px;font-family:inherit;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:#fff;color:#1b1d4a;text-align:center}
+.stats{width:min(560px,100%);background:var(--card);border-radius:14px;padding:10px 14px;margin-top:10px}
+.st{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:900;margin:3px 0}
+.st span{width:5em}
+.st i{flex:1;height:10px;background:#11133a;border-radius:5px;overflow:hidden}
+.st i b{display:block;height:100%;background:var(--acc)}
+.prev{display:flex;align-items:center;gap:12px;margin-top:6px}
+.prev .av{width:70px;height:70px;border-radius:50%;display:grid;place-items:center;font-size:42px;border:4px solid #fff}
+/* 対戦 */
+#s-fight{padding:0}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+#hud{position:absolute;left:0;right:0;bottom:0;display:flex;gap:6px;justify-content:center;padding:8px 6px calc(10px + env(safe-area-inset-bottom));pointer-events:none}
+.hc{flex:1;max-width:130px;background:#0009;border-radius:12px;padding:5px 6px;text-align:center;border-bottom:4px solid}
+.hc .p{font-weight:900;font-size:clamp(20px,6vw,30px);font-family:inherit;line-height:1.1}
+.hc .n{font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc .sk{font-size:11px;letter-spacing:1px}
+.hc.out{opacity:.35}
+#top{position:absolute;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;padding:calc(8px + env(safe-area-inset-top)) 10px 0}
+#top button{border:0;border-radius:10px;background:#0008;color:#fff;font-weight:900;font-family:inherit;font-size:16px;padding:8px 12px}
+#clock{font-weight:900;font-size:20px;background:#0008;border-radius:10px;padding:4px 12px}
+#banner{position:absolute;left:0;right:0;top:34%;text-align:center;font-weight:900;font-style:italic;font-size:clamp(44px,14vw,90px);color:#fff;text-shadow:4px 4px 0 #e53935;pointer-events:none;display:none}
+/* 結果 */
+.win{font-size:90px;line-height:1;margin-top:5vh}
+.res{width:min(520px,100%)}
+.rr{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;padding:8px 12px;margin:6px 0}
+.rr .r{font-weight:900;font-size:22px;width:2.2em}
+.rr .a{font-size:30px}
+.rr .t{font-size:12px;color:var(--mut)}
+</style>
+</head>
+<body>
+
+<!-- タイトル -->
+<section class="scr on" id="s-title">
+  <h1>オートバトル<br>ブラザーズ</h1>
+  <p class="mut">キャラをつくったら、あとは見てるだけ！<br>ダメージ％がたまるほど遠くまでふっとぶよ。<br>場外に出たらストックが減って、最後まで残った人の勝ち。</p>
+  <div class="sec" style="text-align:center">なんにんで戦う？</div>
+  <div class="row seg" id="num"><button data-n="2">2人</button><button data-n="3">3人</button><button data-n="4" class="on">4人</button></div>
+  <div class="sec" style="text-align:center">ストック</div>
+  <div class="row seg" id="stk"><button data-n="1">1</button><button data-n="2">2</button><button data-n="3" class="on">3</button></div>
+  <button class="btn" id="toSlots" style="margin-top:22px">キャラをえらぶ</button>
+</section>
+
+<!-- 参加キャラ -->
+<section class="scr" id="s-slots">
+  <h2>ファイター</h2>
+  <p class="mut">「つくる」で自分だけのキャラを設計。<br>「CPU」はおまかせで作ります。</p>
+  <div id="slots" style="width:min(520px,100%)"></div>
+  <button class="btn" id="fight" style="margin-top:14px">バトルスタート！</button>
+  <button class="btn s" id="slBack">もどる</button>
+</section>
+
+<!-- キャラをつくる -->
+<section class="scr" id="s-make">
+  <h2 id="mkTitle">キャラをつくる</h2>
+  <input class="name" id="mkName" maxlength="8">
+  <div class="sec">みため</div><div class="grid g6" id="mkFace"></div>
+  <div class="sec">いろ</div><div class="grid g6" id="mkColor"></div>
+  <div class="sec">タイプ</div><div class="grid g3" id="mkType"></div>
+  <div class="sec">ふつうのわざ</div><div class="grid g3" id="mkAtk"></div>
+  <div class="sec">ひっさつわざ（ときどき使う）</div><div class="grid g3" id="mkSp"></div>
+  <div class="stats"><div class="prev"><div class="av" id="mkAv"></div><div id="mkDesc" style="font-size:13px;line-height:1.5"></div></div><div id="mkStats"></div></div>
+  <div class="row" style="margin-top:10px"><button class="btn s" id="mkRand" style="min-width:140px">🎲 おまかせ</button><button class="btn" id="mkOk" style="min-width:140px">けってい</button></div>
+</section>
+
+<!-- 対戦 -->
+<section class="scr" id="s-fight">
+  <canvas id="cv"></canvas>
+  <div id="top"><button id="quit">✕</button><div id="clock">3:00</div><button id="spd">×1</button></div>
+  <div id="banner"></div>
+  <div id="hud"></div>
+</section>
+
+<!-- 結果 -->
+<section class="scr" id="s-res">
+  <div class="win" id="rsAv"></div>
+  <h1 id="rsName" style="margin-top:6px;font-size:clamp(26px,7vw,40px)"></h1>
+  <div class="res" id="rsList"></div>
+  <button class="btn" id="rsAgain">同じキャラでもういちど</button>
+  <button class="btn s" id="rsSlots">キャラをかえる</button>
+  <button class="btn s" id="rsTitle">タイトルへ</button>
+</section>
+
+<script>
+'use strict';
+const $ = id => document.getElementById(id);
+const R = Math.random, pick = a => a[Math.floor(R() * a.length)];
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* ---------- 選べるもの ---------- */
+const FACES = ['🐱','🐶','🐸','🐵','🐼','🦊','🐯','🐧','🤖','👻','🦖','🐙'];
+const COLORS = ['#e53935','#1e88e5','#43a047','#fdd835','#8e24aa','#fb8c00','#00acc1','#ec407a','#6d4c41','#546e7a','#7cb342','#f5f5f5'];
+const TYPES = {
+  power:  {n:'パワー',   e:'💪', d:'わざが強い。ちょっと重い', atk:1.25, spd:.92, wt:1.12, jmp:.95, jumps:2},
+  speed:  {n:'スピード', e:'⚡', d:'すばやい。でも軽い',       atk:.9,  spd:1.35, wt:.85, jmp:1.1, jumps:2},
+  balance:{n:'バランス', e:'⚖️', d:'ぜんぶふつう',             atk:1,   spd:1.05, wt:1,   jmp:1,   jumps:2},
+  heavy:  {n:'おもい',   e:'🪨', d:'ふっとびにくい。おそい',   atk:1.1, spd:.8,  wt:1.45, jmp:.85, jumps:2},
+  jump:   {n:'ジャンプ', e:'🦘', d:'3段ジャンプで戻ってこれる', atk:.95, spd:1.05, wt:.9,  jmp:1.25, jumps:3},
+};
+const ATKS = {
+  punch: {n:'パンチ',   e:'👊', d:'はやい・弱い',     range:58,  r:34, dmg:4,  kb:3,   g:.055, up:.12, act:.07, cd:.3},
+  kick:  {n:'キック',   e:'🦶', d:'ふつう',           range:72,  r:38, dmg:6.5,kb:4,   g:.075, up:.18, act:.1,  cd:.5},
+  sword: {n:'つるぎ',   e:'🗡️', d:'リーチが長い',     range:100, r:44, dmg:8.5,kb:4.5, g:.095, up:.18, act:.16, cd:.68},
+  hammer:{n:'ハンマー', e:'🔨', d:'おそい・超ふっとぶ', range:88,  r:50, dmg:14, kb:7,   g:.13,  up:.35, act:.26, cd:1.05},
+  magic: {n:'まほう弾', e:'✨', d:'とびどうぐ',        range:420, proj:{v:560, r:18, life:1.1}, dmg:5.5, kb:3.5, g:.06, up:.15, act:.14, cd:1.05},
+  bow:   {n:'ゆみ',     e:'🏹', d:'遠くまで届く',      range:640, proj:{v:880, r:12, life:1}, dmg:4.5, kb:3, g:.05, up:.1, act:.18, cd:1.0},
+};
+const SPS = {
+  dash:   {n:'とっしん', e:'💨', d:'横にぶっとぶ体当たり', cd:4.5},
+  cannon: {n:'たいほう', e:'💥', d:'大きな弾をうつ',       cd:6},
+  meteor: {n:'メテオ',   e:'☄️', d:'上から急降下',         cd:5},
+  spin:   {n:'たつまき', e:'🌪️', d:'まわりをまきこむ',     cd:4.5},
+  heal:   {n:'かいふく', e:'💚', d:'ダメージを30％へらす',  cd:9},
+  shield: {n:'バリア',   e:'🛡️', d:'しばらく無敵＆はね返す', cd:9},
+};
+const CPU_NAMES = ['ミケ','ポチ','ケロ','モンタ','パン太','コン','トラ吉','ペン吉','ロボ太','ユーレイ','ガブ','タコ助'];
+
+/* ---------- 設定 ---------- */
+let nFighters = 4, nStock = 3;
+let roster = [];    // {human, name, face, color, type, atk, sp}
+try { const s = JSON.parse(localStorage.getItem('smb_roster') || 'null'); if (Array.isArray(s)) roster = s; } catch(e){}
+function save(){ try { localStorage.setItem('smb_roster', JSON.stringify(roster)); } catch(e){} }
+function randChar(human){
+  const usedC = roster.map(r => r && r.color), usedF = roster.map(r => r && r.face);
+  const face = pick(FACES.filter(f => !usedF.includes(f)).concat(FACES.length ? [] : FACES)) || pick(FACES);
+  return {human: !!human, name: human ? 'わたし' : (CPU_NAMES[FACES.indexOf(face)] || 'CPU'), face,
+    color: pick(COLORS.filter(c => !usedC.includes(c))) || pick(COLORS),
+    type: pick(Object.keys(TYPES)), atk: pick(Object.keys(ATKS)), sp: pick(Object.keys(SPS))};
+}
+function show(id){ document.querySelectorAll('.scr').forEach(s => s.classList.toggle('on', s.id === id)); }
+function seg(id, cb){ $(id).querySelectorAll('button').forEach(b => b.onclick = () => { $(id).querySelectorAll('button').forEach(x => x.classList.toggle('on', x === b)); cb(+b.dataset.n); }); }
+seg('num', n => nFighters = n); seg('stk', n => nStock = n);
+function speak(t, pitch = 1, rate = 1.1){
+  try {
+    if (window.Android && Android.speak) Android.speak(t, pitch, rate);
+    else if (window.speechSynthesis){ const u = new SpeechSynthesisUtterance(t); u.lang = 'ja-JP'; u.pitch = pitch; u.rate = rate; speechSynthesis.cancel(); speechSynthesis.speak(u); }
+  } catch(e){}
+}
+
+/* ---------- 参加キャラの一覧 ---------- */
+function drawSlots(){
+  while (roster.length < nFighters) roster.push(randChar(roster.length === 0));
+  $('slots').innerHTML = roster.slice(0, nFighters).map((c, i) => `<div class="slot">
+    <div class="av" style="background:${c.color}">${c.face}</div>
+    <div><div class="nm">${esc(c.name)}${c.human ? '' : '<span class="cpu">CPU</span>'}</div>
+      <div class="sub">${TYPES[c.type].e}${TYPES[c.type].n}・${ATKS[c.atk].e}${ATKS[c.atk].n}・${SPS[c.sp].e}${SPS[c.sp].n}</div></div>
+    <div class="act"><button class="k" data-m="${i}">つくる</button><button data-r="${i}">CPU</button></div></div>`).join('');
+  $('slots').querySelectorAll('[data-m]').forEach(b => b.onclick = () => make(+b.dataset.m));
+  $('slots').querySelectorAll('[data-r]').forEach(b => b.onclick = () => { const i = +b.dataset.r; roster[i] = null; roster[i] = randChar(false); save(); drawSlots(); });
+}
+$('toSlots').onclick = () => { drawSlots(); show('s-slots'); };
+$('slBack').onclick = () => show('s-title');
+
+/* ---------- キャラをつくる ---------- */
+let mk = null, mkIdx = 0;
+function opts(el, list, key, fmt){
+  $(el).innerHTML = list.map(([k, v]) => `<button class="opt${mk[key] === k ? ' on' : ''}" data-k="${k}">${fmt(k, v)}</button>`).join('');
+  $(el).querySelectorAll('button').forEach(b => b.onclick = () => { mk[key] = b.dataset.k; renderMake(); });
+}
+function renderMake(){
+  opts('mkFace', FACES.map(f => [f, f]), 'face', f => `<span class="e">${f}</span>`);
+  $('mkColor').innerHTML = COLORS.map(c => `<button class="col${mk.color === c ? ' on' : ''}" style="background:${c}" data-k="${c}"></button>`).join('');
+  $('mkColor').querySelectorAll('button').forEach(b => b.onclick = () => { mk.color = b.dataset.k; renderMake(); });
+  opts('mkType', Object.entries(TYPES), 'type', (k, v) => `<span class="e">${v.e}</span>${v.n}<small>${v.d}</small>`);
+  opts('mkAtk', Object.entries(ATKS), 'atk', (k, v) => `<span class="e">${v.e}</span>${v.n}<small>${v.d}</small>`);
+  opts('mkSp', Object.entries(SPS), 'sp', (k, v) => `<span class="e">${v.e}</span>${v.n}<small>${v.d}</small>`);
+  $('mkAv').style.background = mk.color; $('mkAv').textContent = mk.face;
+  const T = TYPES[mk.type], A = ATKS[mk.atk];
+  $('mkDesc').innerHTML = `<b>${esc($('mkName').value || 'ななし')}</b><br>${T.e}${T.n}タイプ／${A.e}${A.n}／${SPS[mk.sp].e}${SPS[mk.sp].n}`;
+  const st = [['こうげき', T.atk * (A.dmg + A.kb * 1.5) / 18], ['ふっとばし', T.atk * A.g / .13], ['はやさ', T.spd / 1.4], ['おもさ', T.wt / 1.5], ['ジャンプ', T.jmp * T.jumps / 3.8], ['リーチ', Math.min(1, A.range / 640 * .6 + .25)]];
+  $('mkStats').innerHTML = st.map(([n, v]) => `<div class="st"><span>${n}</span><i><b style="width:${Math.round(clamp(v, .08, 1) * 100)}%"></b></i></div>`).join('');
+}
+function make(i){
+  mkIdx = i; mk = Object.assign({}, roster[i]);
+  if (!mk.human) mk.name = i === 0 ? 'わたし' : `プレイヤー${i + 1}`;
+  $('mkTitle').textContent = `${i + 1}Pのキャラをつくる`;
+  $('mkName').value = mk.name; renderMake(); show('s-make'); $('s-make').scrollTop = 0;
+}
+$('mkName').oninput = renderMake;
+$('mkRand').onclick = () => { const r = randChar(true); Object.assign(mk, {face: r.face, color: r.color, type: r.type, atk: r.atk, sp: r.sp}); renderMake(); };
+$('mkOk').onclick = () => { mk.name = ($('mkName').value || '').trim() || 'ななし'; mk.human = true; roster[mkIdx] = mk; save(); drawSlots(); show('s-slots'); };
+
+/* ---------- バトル ---------- */
+const cv = $('cv'), ctx = cv.getContext('2d');
+const GRAV = 2300, STAGE = {x0: 200, x1: 800, y: 600}, PLAT = [{x0: 270, x1: 430, y: 455}, {x0: 570, x1: 730, y: 455}, {x0: 420, x1: 580, y: 320}];
+const BLAST = {l: -380, r: 1380, t: -560, b: 1150};
+let F = [], projs = [], sparks = [], cam = {x: 500, y: 450, z: 1}, shake = 0, speedMul = 1, clock = 180, running = false, lastT = 0, endT = 0, slowmo = 0, acc = 0;
+
+function makeFighter(c, i){
+  const T = TYPES[c.type];
+  const sx = [300, 700, 420, 580][i], sy = 480;
+  return Object.assign({}, c, {i, T, A: ATKS[c.atk], S: SPS[c.sp], x: sx, y: sy, vx: 0, vy: 0, face: c.face, dir: i % 2 ? -1 : 1,
+    pct: 0, stock: nStock, ground: false, jumps: T.jumps, upB: true, stun: 0, inv: 1.5, cd: .5 + R() * .4, spCd: 2 + R() * 3,
+    atkT: 0, atkHit: new Set(), spT: 0, spKind: null, shield: 0, dead: false, respawn: 0, target: null, tgtT: 0, think: 0, drop: 0,
+    ko: 0, dealt: 0, falls: 0, place: 0, outT: 0, last: null, rad: 30});
+}
+function startFight(){
+  F = roster.slice(0, nFighters).map((c, i) => makeFighter(c, i));
+  projs = []; sparks = []; clock = 180; speedMul = 1; $('spd').textContent = '×1'; shake = 0; endT = 0; slowmo = 0; acc = 0;
+  show('s-fight'); resize(); buildHud();
+  banner('READY', 900); setTimeout(() => { banner('GO!', 700); running = true; speak('ゴー！'); }, 1000);
+  speak('レディー');
+  running = false; lastT = performance.now(); requestAnimationFrame(frame);
+}
+function banner(t, ms){ const b = $('banner'); b.textContent = t; b.style.display = 'block'; clearTimeout(b._t); b._t = setTimeout(() => b.style.display = 'none', ms); }
+function buildHud(){
+  $('hud').innerHTML = F.map(f => `<div class="hc" id="hc${f.i}" style="border-color:${f.color}"><div class="n">${f.face} ${esc(f.name)}</div><div class="p" id="hp${f.i}">0%</div><div class="sk" id="hs${f.i}"></div></div>`).join('');
+  updHud();
+}
+function updHud(){
+  F.forEach(f => {
+    const p = $('hp' + f.i); if (!p) return;
+    p.textContent = Math.floor(f.pct) + '%';
+    p.style.color = f.pct < 50 ? '#fff' : f.pct < 100 ? '#ffd54f' : f.pct < 150 ? '#ff8a65' : '#ff3d3d';
+    $('hs' + f.i).textContent = '●'.repeat(Math.max(0, f.stock));
+    $('hc' + f.i).classList.toggle('out', f.stock <= 0);
+  });
+}
+function resize(){ const d = Math.min(window.devicePixelRatio || 1, 2); cv.width = innerWidth * d; cv.height = innerHeight * d; cv._d = d; }
+window.addEventListener('resize', () => { if ($('s-fight').classList.contains('on')) resize(); });
+
+const alive = () => F.filter(f => f.stock > 0);
+const onStageX = x => x > STAGE.x0 - 10 && x < STAGE.x1 + 10;
+
+/* ----- わざ ----- */
+function hit(att, def, dmg, kb, g, ang, fromX){
+  if (def.dead || def.inv > 0 || def === att) return false;
+  if (def.shield > 0){ sparks.push({x: def.x, y: def.y, t: 0, k: 'ring', c: '#80deea'}); return false; }
+  dmg *= att.T.atk; def.pct = Math.min(999, def.pct + dmg); att.dealt += dmg; def.last = att;
+  const v = (kb * 42 + def.pct * g * 92) / def.T.wt;
+  const dir = Math.sign(def.x - (fromX != null ? fromX : att.x)) || att.dir;
+  def.vx = Math.cos(ang) * v * dir; def.vy = -Math.sin(ang) * v;
+  def.stun = clamp(v / 1500, .12, 1.1); def.ground = false; def.atkT = 0; def.spKind = null;
+  shake = Math.max(shake, clamp(v / 120, 2, 16));
+  sparks.push({x: (att.x + def.x) / 2, y: (att.y + def.y) / 2, t: 0, k: 'hit', s: clamp(v / 18, 18, 70), c: att.color});
+  if (v > 1250) { slowmo = .25; sparks.push({x: def.x, y: def.y, t: 0, k: 'smash', c: '#fff'}); }
+  sfx(v > 1100 ? 'smash' : 'hit');
+  return true;
+}
+function doAttack(f){
+  const A = f.A; f.atkT = A.act + .12; f.atkHit = new Set(); f.cd = A.cd;
+  if (A.proj){
+    projs.push({o: f, x: f.x + f.dir * 30, y: f.y - 6, vx: A.proj.v * f.dir, vy: 0, r: A.proj.r, life: A.proj.life, dmg: A.dmg, kb: A.kb, g: A.g, e: A.e, ang: .35});
+    sfx('shot');
+  }
+}
+function meleeCheck(f){
+  const A = f.A; if (A.proj || f.atkT <= 0) return;
+  const t = A.act + .12 - f.atkT;        // 経過
+  if (t < A.act * .6 || t > A.act + .06) return;
+  const hx = f.x + f.dir * A.range * .62, hy = f.y - 4;
+  F.forEach(o => { if (o !== f && !f.atkHit.has(o) && Math.hypot(o.x - hx, o.y - hy) < A.r + o.rad){ f.atkHit.add(o); hit(f, o, A.dmg, A.kb, A.g, .62 + A.up); } });
+}
+function doSpecial(f, tg){
+  f.spCd = f.S.cd * (.85 + R() * .3); f.spKind = f.c_sp = f.sp; f.spT = 0; f.atkHit = new Set();
+  sfx('sp'); sparks.push({x: f.x, y: f.y, t: 0, k: 'txt', s: f.S.e + f.S.n, c: f.color});
+  switch (f.sp){
+    case 'dash': f.vx = f.dir * 1050 * f.T.spd; f.vy = -120; f.spT = .38; break;
+    case 'cannon': projs.push({o: f, x: f.x + f.dir * 34, y: f.y - 8, vx: 430 * f.dir, vy: 0, r: 30, life: 1.6, dmg: 15, kb: 7, g: .13, e: '💥', ang: .6, big: true}); f.spKind = null; break;
+    case 'meteor': f.vy = -900 * f.T.jmp; f.vx = tg ? clamp((tg.x - f.x) * 1.4, -500, 500) : 0; f.spT = 1.3; f.ground = false; f.metPhase = 0; break;
+    case 'spin': f.spT = .7; f.spinHits = 0; break;
+    case 'heal': f.pct = Math.max(0, f.pct - 30); f.spKind = null; sparks.push({x: f.x, y: f.y, t: 0, k: 'ring', c: '#69f0ae'}); break;
+    case 'shield': f.shield = 1.8; f.spKind = null; break;
+  }
+}
+function specialTick(f, dt){
+  if (!f.spKind) return;
+  f.spT -= dt;
+  if (f.spKind === 'dash'){
+    F.forEach(o => { if (o !== f && !f.atkHit.has(o) && Math.hypot(o.x - f.x, o.y - f.y) < 64){ f.atkHit.add(o); hit(f, o, 13, 7.5, .11, .5); } });
+    sparks.push({x: f.x - f.dir * 20, y: f.y, t: 0, k: 'trail', c: f.color});
+  }
+  if (f.spKind === 'meteor'){
+    if (f.metPhase === 0 && f.vy > -100){ f.metPhase = 1; f.vy = 1500; f.vx *= .3; }
+    if (f.metPhase === 1){
+      sparks.push({x: f.x, y: f.y - 20, t: 0, k: 'trail', c: '#ff7043'});
+      F.forEach(o => { if (o !== f && !f.atkHit.has(o) && Math.hypot(o.x - f.x, o.y - f.y) < 72){ f.atkHit.add(o); hit(f, o, 16, 7, .12, 1.1); } });
+      if (f.ground){ f.spT = 0; shake = 10; sparks.push({x: f.x, y: f.y + 20, t: 0, k: 'ring', c: '#ff7043'});
+        F.forEach(o => { if (o !== f && !f.atkHit.has(o) && Math.abs(o.x - f.x) < 120 && Math.abs(o.y - f.y) < 60){ f.atkHit.add(o); hit(f, o, 9, 5, .08, 1.2); } }); }
+    }
+  }
+  if (f.spKind === 'spin'){
+    const k = Math.floor((.7 - f.spT) / .2);
+    if (k > f.spinHits && k <= 3){ f.spinHits = k; f.atkHit = new Set(); }
+    F.forEach(o => { if (o !== f && !f.atkHit.has(o) && Math.hypot(o.x - f.x, o.y - f.y) < 95){ f.atkHit.add(o); const last = f.spinHits >= 3; hit(f, o, last ? 8 : 3, last ? 7 : 1.2, last ? .11 : .01, last ? .9 : 1.3); } });
+    f.vy = Math.min(f.vy, 120);
+  }
+  if (f.spT <= 0) f.spKind = null;
+}
+
+/* ----- CPUの考え ----- */
+function think(f){
+  const others = alive().filter(o => o !== f && !o.dead);
+  if (!others.length) return;
+  f.tgtT -= .1;
+  if (!f.target || f.target.dead || f.target.stock <= 0 || f.tgtT <= 0){
+    // 近い相手を多めに。ダメージがたまっている相手も狙う
+    const w = others.map(o => 1 / (60 + Math.hypot(o.x - f.x, o.y - f.y)) * (1 + o.pct / 120));
+    let r = R() * w.reduce((a, b) => a + b, 0); f.target = others[0];
+    for (let k = 0; k < others.length; k++){ r -= w[k]; if (r <= 0){ f.target = others[k]; break; } }
+    f.tgtT = 2 + R() * 2.5;
+  }
+}
+function control(f, dt){
+  const T = f.T, tg = f.target, run = 430 * T.spd;
+  const off = !onStageX(f.x) || f.y > STAGE.y + 20;
+  const others = alive().filter(o => o !== f && !o.dead);
+  let want = 0;
+  if (off){
+    // 復帰：ステージの方へ
+    want = Math.sign(500 - f.x);
+    if (f.vy > 0 && f.y > STAGE.y - 120){
+      if (f.jumps > 0) jump(f);
+      else if (f.upB && f.y > STAGE.y - 40){ f.upB = false; f.vy = -1150 * T.jmp; f.vx = want * 380; sparks.push({x: f.x, y: f.y + 20, t: 0, k: 'ring', c: '#fff'}); sfx('jump'); }
+    }
+  } else if (tg){
+    const dx = tg.x - f.x, dy = tg.y - f.y, ad = Math.abs(dx);
+    const A = f.A, isProj = !!A.proj;
+    const near = isProj ? 220 : A.range * .7;
+    if (isProj && ad < 170 && R() < .6) want = -Math.sign(dx);           // とびどうぐは少し離れる
+    else if (ad > near) want = Math.sign(dx);
+    // 相手が場外なら深追いしない
+    if (!onStageX(tg.x) && ((f.x < STAGE.x0 + 50 && want < 0) || (f.x > STAGE.x1 - 50 && want > 0))) want = 0;
+    if (f.ground){
+      if (dy < -90 && R() < .08) jump(f);
+      if (dy > 80 && f.y < STAGE.y - 10 && R() < .05) f.drop = .25;   // 足場から下りる
+    } else if (dy < -60 && f.vy > -100 && f.jumps > 0 && R() < .04) jump(f);
+    // 向き
+    if (f.atkT <= 0) f.dir = Math.sign(dx) || f.dir;
+    // こうげき
+    const inRange = isProj ? (ad < A.range && Math.abs(dy) < 70) : (ad < A.range + tg.rad && Math.abs(dy) < 60);
+    if (f.cd <= 0 && f.atkT <= 0 && inRange && R() < .5) doAttack(f);
+    // ひっさつ
+    if (f.spCd <= 0 && !f.spKind){
+      const s = f.sp; let use = false;
+      if (s === 'heal') use = f.pct > 55;
+      if (s === 'shield') use = others.some(o => Math.hypot(o.x - f.x, o.y - f.y) < 150 || false) || projs.some(p => p.o !== f && Math.abs(p.x - f.x) < 200 && Math.abs(p.y - f.y) < 60);
+      if (s === 'dash') use = Math.abs(dy) < 50 && ad < 360 && onStageX(f.x + Math.sign(dx) * 300);
+      if (s === 'cannon') use = Math.abs(dy) < 60 && ad < 650;
+      if (s === 'meteor') use = ad < 260 && f.ground;
+      if (s === 'spin') use = Math.hypot(dx, dy) < 110;
+      if (use){ f.dir = Math.sign(dx) || f.dir; doSpecial(f, tg); }
+    }
+    // 端から落ちないように
+    if (f.ground && f.y >= STAGE.y - 2 && ((f.x < STAGE.x0 + 30 && want < 0) || (f.x > STAGE.x1 - 30 && want > 0))) want = 0;
+  }
+  if (f.spKind === 'dash') return;
+  const target = want * run, a = f.ground ? 3200 : 1500;
+  f.vx += clamp(target - f.vx, -a * dt, a * dt);
+}
+function jump(f){
+  if (f.jumps <= 0) return;
+  f.vy = -(f.ground ? 860 : 780) * f.T.jmp; f.jumps--; f.ground = false; sfx('jump');
+  if (f.jumps < f.T.jumps - 1) sparks.push({x: f.x, y: f.y + 24, t: 0, k: 'ring', c: '#ffffff88'});
+}
+
+/* ----- 1コマ進める ----- */
+function physics(f, dt){
+  if (f.dead){ f.respawn -= dt; if (f.respawn <= 0 && f.stock > 0) respawn(f); return; }
+  f.inv = Math.max(0, f.inv - dt); f.shield = Math.max(0, f.shield - dt);
+  f.cd -= dt; f.spCd -= dt; f.drop = Math.max(0, f.drop - dt);
+  if (f.atkT > 0){ f.atkT -= dt; meleeCheck(f); }
+  specialTick(f, dt);
+  if (f.stun > 0){ f.stun -= dt; f.vx *= Math.exp(-.9 * dt); }
+  else if (running){ f.think -= dt; if (f.think <= 0){ think(f); f.think = .1; } control(f, dt); }
+  f.vy += GRAV * dt * (f.spKind === 'meteor' && f.metPhase === 1 ? 0 : 1);
+  f.vy = Math.min(f.vy, f.stun > 0 ? 2400 : 1250);
+  const py = f.y;
+  f.x += f.vx * dt; f.y += f.vy * dt;
+  f.ground = false;
+  // 床（上からだけ乗れる）
+  const feet = f.y + f.rad, pfeet = py + f.rad;
+  const land = (x0, x1, y, solid) => {
+    if (f.x > x0 - 4 && f.x < x1 + 4 && f.vy >= 0 && pfeet <= y + 2 && feet >= y && (solid || f.drop <= 0)){
+      if (f.stun > .25 && f.vy > 700){ f.vy = -f.vy * .45; f.stun *= .5; sparks.push({x: f.x, y, t: 0, k: 'ring', c: '#fff'}); return; }   // バウンド
+      f.y = y - f.rad; f.vy = 0; f.ground = true; f.jumps = f.T.jumps; f.upB = true;
+      if (f.spKind === 'meteor' && f.metPhase === 1) f.spT = Math.min(f.spT, .01);
+    }
+  };
+  land(STAGE.x0, STAGE.x1, STAGE.y, true);
+  PLAT.forEach(p => land(p.x0, p.x1, p.y, false));
+  // ステージの横の壁
+  if (f.y + f.rad > STAGE.y + 6 && f.y - f.rad < STAGE.y + 120 && f.x > STAGE.x0 - f.rad && f.x < STAGE.x1 + f.rad){
+    if (f.x < 500) { f.x = STAGE.x0 - f.rad; f.vx = Math.min(f.vx, 0) * .4; } else { f.x = STAGE.x1 + f.rad; f.vx = Math.max(f.vx, 0) * .4; }
+  }
+  if (f.ground && f.stun <= 0) f.vx *= Math.exp(-6 * dt) ** (f.spKind === 'dash' ? 0 : 1);
+  // 場外
+  if (f.x < BLAST.l || f.x > BLAST.r || f.y > BLAST.b || (f.y < BLAST.t && f.stun > 0)) ko(f);
+}
+function ko(f){
+  f.dead = true; f.stock--; f.falls++; f.respawn = 1.3; if (!f.last) f.sd = (f.sd || 0) + 1;
+  if (f.last && f.last !== f && f.last.stock >= 0) f.last.ko++;
+  const ex = clamp(f.x, cam.x - 600, cam.x + 600), ey = clamp(f.y, -200, 900);
+  sparks.push({x: ex, y: ey, t: 0, k: 'blast', c: f.color, ang: Math.atan2(f.y - 450, f.x - 500)});
+  shake = 22; sfx('ko'); updHud();
+  const left = alive();
+  if (f.stock <= 0) f.place = left.length + 1;
+  speak(f.stock > 0 ? `${f.name}、ふっとんだ！` : `${f.name}、脱落！`);
+  if (left.length <= 1 && !endT){ endT = 1.8; running = false; banner('GAME SET', 1800); left.forEach(w => w.place = 1); setTimeout(() => speak('ゲームセット！'), 400); }
+}
+function respawn(f){
+  f.dead = false; f.x = 500; f.y = 150; f.vx = 0; f.vy = 0; f.pct = 0; f.inv = 2; f.stun = 0; f.jumps = f.T.jumps; f.upB = true; f.spKind = null; f.atkT = 0; f.last = null; updHud();
+}
+function stepProj(dt){
+  projs.forEach(p => {
+    p.x += p.vx * dt; p.y += p.vy * dt; p.life -= dt;
+    F.forEach(o => {
+      if (o === p.o || o.dead || p.life <= 0 || Math.hypot(o.x - p.x, o.y - p.y) > o.rad + p.r) return;
+      if (o.shield > 0){ p.vx = -p.vx; p.o = o; p.life = Math.max(p.life, .6); sfx('hit'); return; }   // はね返す
+      if (hit(p.o, o, p.dmg, p.kb, p.g, p.ang, p.x - Math.sign(p.vx) * 10)) p.life = 0;
+    });
+  });
+  projs = projs.filter(p => p.life > 0);
+}
+function tick(dt){
+  F.forEach(f => physics(f, dt));
+  stepProj(dt);
+  if (running){
+    clock -= dt;
+    if (clock <= 0){ clock = 0; running = false; endT = 1.8; banner('TIME UP', 1800);
+      const ord = F.slice().sort((a, b) => (b.stock - a.stock) || (a.pct - b.pct));
+      ord.forEach((f, k) => { if (f.stock > 0) f.place = k + 1; }); }
+  }
+}
+
+/* ----- 描画 ----- */
+function frame(now){
+  if (!$('s-fight').classList.contains('on')) return;
+  let dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
+  if (slowmo > 0){ slowmo -= dt; dt *= .3; }
+  acc += dt * speedMul;
+  const h = 1 / 120; let n = 0;
+  while (acc >= h && n < 40){ tick(h); acc -= h; n++; }
+  if (endT > 0){ endT -= dt; if (endT <= 0) return result(); }
+  sparks.forEach(s => s.t += dt * speedMul); sparks = sparks.filter(s => s.t < (s.k === 'blast' ? .9 : s.k === 'txt' ? 1 : .4));
+  shake *= Math.exp(-8 * dt);
+  const m = Math.max(0, Math.ceil(clock)); $('clock').textContent = `${Math.floor(m / 60)}:${String(m % 60).padStart(2, '0')}`;
+  updHud(); draw();
+  requestAnimationFrame(frame);
+}
+function draw(){
+  const d = cv._d || 1, Wp = cv.width / d, Hp = cv.height / d;
+  // カメラ：みんなが入るように寄ったり引いたり
+  const pts = F.filter(f => !f.dead && f.x > -40 && f.x < 1040 && f.y < 800).map(f => [f.x, clamp(f.y, 60, 800)]);
+  pts.push([STAGE.x0 + 40, STAGE.y], [STAGE.x1 - 40, STAGE.y]);
+  let x0 = Math.min(...pts.map(p => p[0])) - 80, x1 = Math.max(...pts.map(p => p[0])) + 80;
+  let y0 = Math.min(...pts.map(p => p[1])) - 120, y1 = Math.max(...pts.map(p => p[1])) + 150;
+  const hudH = 90, topH = 50, vw = Wp, vh = Hp - hudH - topH;
+  const z = clamp(Math.min(vw / (x1 - x0), vh / (y1 - y0)), .3, Wp > Hp ? 1.3 : 1);
+  cam.z += (z - cam.z) * .06; cam.x += ((x0 + x1) / 2 - cam.x) * .08; cam.y += ((y0 + y1) / 2 - cam.y) * .08;
+  ctx.setTransform(d, 0, 0, d, 0, 0);
+  // 背景
+  const gr = ctx.createLinearGradient(0, 0, 0, Hp); gr.addColorStop(0, '#2a2f7a'); gr.addColorStop(1, '#0f1033');
+  ctx.fillStyle = gr; ctx.fillRect(0, 0, Wp, Hp);
+  const sx = (R() - .5) * shake, sy = (R() - .5) * shake;
+  ctx.translate(Wp / 2 + sx, topH + vh / 2 + sy); ctx.scale(cam.z, cam.z); ctx.translate(-cam.x, -cam.y);
+  // 星
+  ctx.fillStyle = '#ffffff30';
+  for (let i = 0; i < 60; i++){ const x = (i * 197) % 1800 - 400, y = (i * 131) % 1200 - 400; ctx.fillRect(x + (cam.x - 500) * .5, y + (cam.y - 450) * .5, 3, 3); }
+  // ステージ
+  ctx.fillStyle = '#3e4396'; ctx.beginPath();
+  ctx.moveTo(STAGE.x0, STAGE.y); ctx.lineTo(STAGE.x1, STAGE.y); ctx.lineTo(STAGE.x1 - 40, STAGE.y + 110); ctx.lineTo(STAGE.x0 + 40, STAGE.y + 110); ctx.fill();
+  ctx.fillStyle = '#8be08b'; ctx.fillRect(STAGE.x0, STAGE.y, STAGE.x1 - STAGE.x0, 10);
+  PLAT.forEach(p => { ctx.fillStyle = '#c5c9ff'; ctx.fillRect(p.x0, p.y, p.x1 - p.x0, 8); ctx.fillStyle = '#c5c9ff55'; ctx.fillRect(p.x0 + 8, p.y + 8, p.x1 - p.x0 - 16, 6); });
+  // とびどうぐ
+  projs.forEach(p => {
+    ctx.fillStyle = p.o.color + 'aa'; ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, 7); ctx.fill();
+    ctx.font = `${p.r * 1.8}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(p.e, p.x, p.y);
+  });
+  // ファイター
+  F.forEach(f => {
+    if (f.dead) return;
+    ctx.save(); ctx.translate(f.x, f.y);
+    if (f.inv > 0 && Math.floor(f.inv * 12) % 2) ctx.globalAlpha = .45;
+    if (f.spKind === 'spin') ctx.rotate(performance.now() / 50);
+    // 影
+    ctx.fillStyle = '#0005'; ctx.beginPath(); ctx.ellipse(0, f.rad + 2, f.rad * .8, 5, 0, 0, 7); ctx.fill();
+    ctx.fillStyle = f.color; ctx.beginPath(); ctx.arc(0, 0, f.rad, 0, 7); ctx.fill();
+    ctx.lineWidth = 3; ctx.strokeStyle = f.stun > 0 ? '#fff' : '#0006'; ctx.stroke();
+    ctx.font = `${f.rad * 1.35}px sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.save(); ctx.scale(f.dir, 1); ctx.fillText(f.face, 0, 2); ctx.restore();
+    // わざ
+    if (f.atkT > 0){
+      const A = f.A, t = 1 - f.atkT / (A.act + .12);
+      ctx.font = `${A.proj ? 26 : 30}px sans-serif`;
+      const reach = A.proj ? 36 : Math.min(A.range, 30 + A.range * t * 1.1);
+      ctx.save(); ctx.scale(f.dir, 1); ctx.fillText(A.e, reach, -4); ctx.restore();
+      if (!A.proj && t > .4 && t < .95){ ctx.strokeStyle = '#ffffffaa'; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(f.dir * A.range * .62, -4, A.r * .9, f.dir > 0 ? -1 : 2.1, f.dir > 0 ? 1 : 4.2); ctx.stroke(); }
+    }
+    if (f.shield > 0){ ctx.strokeStyle = '#80deea'; ctx.globalAlpha = .7; ctx.lineWidth = 5; ctx.beginPath(); ctx.arc(0, 0, f.rad + 12, 0, 7); ctx.stroke(); ctx.globalAlpha = 1; }
+    ctx.restore();
+    // 名前と%
+    const fs = Math.max(15, 11 / cam.z); ctx.fillStyle = '#fff'; ctx.font = `900 ${fs}px sans-serif`; ctx.textAlign = 'center';
+    ctx.fillText(`${f.name}`, f.x, f.y - f.rad - fs * 1.5);
+    ctx.fillStyle = f.pct < 100 ? '#ffe082' : '#ff6e6e'; ctx.fillText(`${Math.floor(f.pct)}%`, f.x, f.y - f.rad - fs * .4);
+  });
+  // 画面の外にいる人の矢印
+  const vl = cam.x - (Wp / 2) / cam.z, vr = cam.x + (Wp / 2) / cam.z, vt = cam.y - (vh / 2) / cam.z, vb = cam.y + (vh / 2) / cam.z;
+  F.forEach(f => {
+    if (f.dead || (f.x > vl && f.x < vr && f.y > vt && f.y < vb)) return;
+    const x = clamp(f.x, vl + 40 / cam.z, vr - 40 / cam.z), y = clamp(f.y, vt + 40 / cam.z, vb - 40 / cam.z);
+    ctx.fillStyle = f.color; ctx.beginPath(); ctx.arc(x, y, 26 / cam.z, 0, 7); ctx.fill();
+    ctx.font = `${30 / cam.z}px sans-serif`; ctx.fillText(f.face, x, y + 2 / cam.z);
+  });
+  // 演出
+  sparks.forEach(s => {
+    const k = s.t;
+    if (s.k === 'hit'){ ctx.strokeStyle = s.c; ctx.globalAlpha = 1 - k / .4; ctx.lineWidth = 5; for (let i = 0; i < 8; i++){ const a = i * .785 + s.x; ctx.beginPath(); ctx.moveTo(s.x + Math.cos(a) * s.s * k * 1.5, s.y + Math.sin(a) * s.s * k * 1.5); ctx.lineTo(s.x + Math.cos(a) * (s.s * .5 + s.s * k * 2.5), s.y + Math.sin(a) * (s.s * .5 + s.s * k * 2.5)); ctx.stroke(); } }
+    if (s.k === 'ring'){ ctx.strokeStyle = s.c; ctx.globalAlpha = 1 - k / .4; ctx.lineWidth = 4; ctx.beginPath(); ctx.arc(s.x, s.y, 20 + k * 200, 0, 7); ctx.stroke(); }
+    if (s.k === 'trail'){ ctx.fillStyle = s.c; ctx.globalAlpha = .4 * (1 - k / .4); ctx.beginPath(); ctx.arc(s.x, s.y, 24 * (1 - k), 0, 7); ctx.fill(); }
+    if (s.k === 'smash'){ ctx.fillStyle = '#fff'; ctx.globalAlpha = .6 * (1 - k / .4); ctx.beginPath(); ctx.arc(s.x, s.y, 40 + k * 300, 0, 7); ctx.fill(); }
+    if (s.k === 'txt'){ ctx.globalAlpha = 1 - k; ctx.fillStyle = '#fff'; ctx.font = `900 ${Math.max(22, 15 / cam.z)}px sans-serif`; ctx.textAlign = 'center'; ctx.fillText(s.s, s.x, s.y - 60 - k * 40); }
+    if (s.k === 'blast'){
+      ctx.globalAlpha = 1 - k / .9; ctx.save(); ctx.translate(s.x, s.y); ctx.rotate(s.ang + Math.PI);
+      const g2 = ctx.createLinearGradient(0, 0, 900, 0); g2.addColorStop(0, '#fff'); g2.addColorStop(.3, s.c); g2.addColorStop(1, '#0000');
+      ctx.fillStyle = g2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(900, -140 - k * 200); ctx.lineTo(900, 140 + k * 200); ctx.fill(); ctx.restore();
+    }
+    ctx.globalAlpha = 1;
+  });
+}
+
+/* ----- 結果 ----- */
+function result(){
+  running = false;
+  const ord = F.slice().sort((a, b) => (a.place || 9) - (b.place || 9) || b.stock - a.stock || a.pct - b.pct);
+  const w = ord[0];
+  $('rsAv').innerHTML = `<span style="display:inline-grid;place-items:center;width:130px;height:130px;border-radius:50%;background:${w.color};border:5px solid #fff">${w.face}</span>`;
+  $('rsName').textContent = `👑 ${w.name} の勝ち！`;
+  $('rsList').innerHTML = ord.map((f, k) => `<div class="rr" style="border-left:6px solid ${f.color}"><div class="r">${k + 1}位</div><div class="a">${f.face}</div>
+    <div><b>${esc(f.name)}</b>${f.human ? '' : ' <span class="cpu">CPU</span>'}<div class="t">${TYPES[f.type].n}・${ATKS[f.atk].n}・${SPS[f.sp].n}</div>
+    <div class="t">ふっとばした ${f.ko}回 ／ あたえたダメージ ${Math.round(f.dealt)}% ／ 落ちた ${f.falls}回</div></div></div>`).join('');
+  show('s-res'); speak(`${w.name}の勝ち！`, 1, 1);
+}
+$('rsAgain').onclick = startFight;
+$('rsSlots').onclick = () => { drawSlots(); show('s-slots'); };
+$('rsTitle').onclick = () => show('s-title');
+$('fight').onclick = () => { save(); startFight(); };
+$('spd').onclick = () => { speedMul = speedMul === 1 ? 2 : speedMul === 2 ? 4 : 1; $('spd').textContent = '×' + speedMul; };
+$('quit').onclick = () => { running = false; show('s-slots'); drawSlots(); };
+window.onBack = () => {
+  if ($('s-fight').classList.contains('on')) $('quit').onclick();
+  else if ($('s-make').classList.contains('on')) show('s-slots');
+  else if ($('s-slots').classList.contains('on') || $('s-res').classList.contains('on')) show('s-title');
+};
+
+/* ----- 効果音 ----- */
+let AC = null;
+function tone(f, d, type, v, slide){
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)();
+    const o = AC.createOscillator(), g = AC.createGain(), t = AC.currentTime;
+    o.type = type; o.frequency.setValueAtTime(f, t); if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(20, f * slide), t + d);
+    g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.001, t + d);
+    o.connect(g); g.connect(AC.destination); o.start(t); o.stop(t + d + .02);
+  } catch(e){}
+}
+let lastSfx = 0;
+function sfx(k){
+  const now = performance.now(); if (k !== 'ko' && k !== 'smash' && now - lastSfx < 45) return; lastSfx = now;
+  if (k === 'hit') tone(260 + R() * 80, .07, 'square', .06, .5);
+  if (k === 'smash'){ tone(140, .3, 'sawtooth', .12, .3); tone(900, .15, 'square', .05, .4); }
+  if (k === 'shot') tone(700, .08, 'triangle', .05, 1.6);
+  if (k === 'jump') tone(400, .08, 'sine', .04, 1.8);
+  if (k === 'sp') tone(500, .2, 'triangle', .08, 2.2);
+  if (k === 'ko'){ tone(1200, .5, 'sawtooth', .1, .15); try { navigator.vibrate && navigator.vibrate(80); } catch(e){} }
+}
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+</script>
+</body>
+</html>
